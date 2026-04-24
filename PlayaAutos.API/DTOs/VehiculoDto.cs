@@ -1,0 +1,35 @@
+﻿namespace PlayaAutos.API.DTOs
+{
+    public class VehiculoDto
+    {
+        public int VehiculoId { get; set; }
+        public string CodigoInterno { get; set; } = string.Empty;
+        public string Marca { get; set; } = string.Empty;
+        public string Modelo { get; set; } = string.Empty;
+        public string Tipo { get; set; } = string.Empty;
+        public string Condicion { get; set; } = string.Empty;
+        public string Estado { get; set; } = string.Empty;
+        public int Anio { get; set; }
+        public string? Color { get; set; }
+        public long? Kilometraje { get; set; }
+        public long PrecioVenta { get; set; }
+        public string? Descripcion { get; set; }
+        public string? FotoPrincipal { get; set; }
+    }
+
+    public class CrearVehiculoDto
+    {
+        public string CodigoInterno { get; set; } = string.Empty;
+        public int ModeloId { get; set; }
+        public int TipoId { get; set; }
+        public int CondicionId { get; set; }
+        public int EstadoId { get; set; }
+        public int OrigenId { get; set; }
+        public int Anio { get; set; }
+        public string? Color { get; set; }
+        public long? Kilometraje { get; set; }
+        public long PrecioVenta { get; set; }
+        public long? CostoAdquisicion { get; set; }
+        public string? Descripcion { get; set; }
+    }
+}

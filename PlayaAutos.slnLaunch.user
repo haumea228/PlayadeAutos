@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Nuevo perfil",
+    "Projects": [
+      {
+        "Path": "PlayaAutos.API\\PlayaAutos.API.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "PlayaAutos.Web\\PlayaAutos.Web.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

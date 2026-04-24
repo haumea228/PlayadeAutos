@@ -1,0 +1,82 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PlayaAutos — Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body { background-color: #1a1a2e; color: white; }
+        .sidebar {
+            background-color: #16213e;
+            min-height: 100vh;
+            border-right: 1px solid #0f3460;
+        }
+        .nav-link { color: #adb5bd; }
+        .nav-link:hover { color: white; background-color: #0f3460; border-radius: 6px; }
+        .nav-link.active { color: white; background-color: #e94560; border-radius: 6px; }
+        .card { background-color: #16213e; border: 1px solid #0f3460; }
+    </style>
+</head>
+<body>
+<div class="d-flex">
+
+    <!-- Sidebar -->
+    <div class="sidebar p-3" style="width: 250px;">
+        <div class="text-center mb-4">
+            <h5 class="text-white fw-bold">🚗 PlayaAutos</h5>
+            <small class="text-muted">@ViewBag.Nombre</small><br/>
+            <span class="badge bg-danger">@ViewBag.Rol</span>
+        </div>
+
+        <nav class="nav flex-column gap-1">
+            <a class="nav-link active px-3 py-2" href="#">🏠 Dashboard</a>
+            <a class="nav-link px-3 py-2" href="#">🚙 Vehículos</a>
+            <a class="nav-link px-3 py-2" href="#">👥 Clientes</a>
+            <a class="nav-link px-3 py-2" href="#">💰 Ventas</a>
+            <a class="nav-link px-3 py-2" href="#">📅 Citas</a>
+            <a class="nav-link px-3 py-2" href="#">🧾 Facturas</a>
+            <a class="nav-link px-3 py-2" href="#">💵 Caja</a>
+            <hr class="border-secondary"/>
+            <a class="nav-link px-3 py-2" href="/Auth/Logout">🚪 Cerrar sesión</a>
+        </nav>
+    </div>
+
+    <!-- Contenido -->
+    <div class="flex-grow-1 p-4">
+        <h4 class="mb-4">Bienvenido, @ViewBag.Nombre 👋</h4>
+
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="card p-3 text-center">
+                    <h2 class="text-warning">0</h2>
+                    <p class="text-muted mb-0">Vehículos disponibles</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-3 text-center">
+                    <h2 class="text-info">0</h2>
+                    <p class="text-muted mb-0">Clientes registrados</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-3 text-center">
+                    <h2 class="text-success">0</h2>
+                    <p class="text-muted mb-0">Ventas del mes</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-3 text-center">
+                    <h2 class="text-danger">0</h2>
+                    <p class="text-muted mb-0">Citas pendientes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

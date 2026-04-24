@@ -1,0 +1,205 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|c:\\users\\adali\\onedrive\\escritorio\\desarrollo 2026\\playadeautos\\playaautos\\playaautos.web\\views\\dashboard\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|solutionrelative:playaautos.web\\views\\dashboard\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|c:\\users\\adali\\onedrive\\escritorio\\desarrollo 2026\\playadeautos\\playaautos\\playaautos.web\\controllers\\dashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|solutionrelative:playaautos.web\\controllers\\dashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|c:\\users\\adali\\onedrive\\escritorio\\desarrollo 2026\\playadeautos\\playaautos\\playaautos.web\\views\\auth\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|solutionrelative:playaautos.web\\views\\auth\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|c:\\users\\adali\\onedrive\\escritorio\\desarrollo 2026\\playadeautos\\playaautos\\playaautos.web\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|solutionrelative:playaautos.web\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|c:\\users\\adali\\onedrive\\escritorio\\desarrollo 2026\\playadeautos\\playaautos\\playaautos.web\\playaautos.web.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|solutionrelative:playaautos.web\\playaautos.web.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|c:\\users\\adali\\onedrive\\escritorio\\desarrollo 2026\\playadeautos\\playaautos\\playaautos.web\\models\\loginviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|solutionrelative:playaautos.web\\models\\loginviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|c:\\users\\adali\\onedrive\\escritorio\\desarrollo 2026\\playadeautos\\playaautos\\playaautos.web\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|solutionrelative:playaautos.web\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|c:\\users\\adali\\onedrive\\escritorio\\desarrollo 2026\\playadeautos\\playaautos\\playaautos.web\\services\\apiservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|solutionrelative:playaautos.web\\services\\apiservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|c:\\users\\adali\\onedrive\\escritorio\\desarrollo 2026\\playadeautos\\playaautos\\playaautos.web\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{4F7E4005-A372-468A-89C2-4231A41CACEB}|PlayaAutos.Web\\PlayaAutos.Web.csproj|solutionrelative:playaautos.web\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D26D8F48-78EF-13FD-9092-104F422E8C93}|PlayaAutos.API\\PlayaAutos.API.csproj|c:\\users\\adali\\onedrive\\escritorio\\desarrollo 2026\\playadeautos\\playaautos\\playaautos.api\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D26D8F48-78EF-13FD-9092-104F422E8C93}|PlayaAutos.API\\PlayaAutos.API.csproj|solutionrelative:playaautos.api\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D26D8F48-78EF-13FD-9092-104F422E8C93}|PlayaAutos.API\\PlayaAutos.API.csproj|c:\\users\\adali\\onedrive\\escritorio\\desarrollo 2026\\playadeautos\\playaautos\\playaautos.api\\models\\factura.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D26D8F48-78EF-13FD-9092-104F422E8C93}|PlayaAutos.API\\PlayaAutos.API.csproj|solutionrelative:playaautos.api\\models\\factura.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\Views\\Dashboard\\Index.cshtml",
+              "RelativeDocumentMoniker": "PlayaAutos.Web\\Views\\Dashboard\\Index.cshtml",
+              "ToolTip": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\Views\\Dashboard\\Index.cshtml",
+              "RelativeToolTip": "PlayaAutos.Web\\Views\\Dashboard\\Index.cshtml",
+              "ViewState": "AgIAAEAAAAAAAAAAAAAiwFEAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-04-23T21:42:09.196Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "DashboardController.cs",
+              "DocumentMoniker": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\Controllers\\DashboardController.cs",
+              "RelativeDocumentMoniker": "PlayaAutos.Web\\Controllers\\DashboardController.cs",
+              "ToolTip": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\Controllers\\DashboardController.cs",
+              "RelativeToolTip": "PlayaAutos.Web\\Controllers\\DashboardController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAiwA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-23T21:40:16.479Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Login.cshtml",
+              "DocumentMoniker": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\Views\\Auth\\Login.cshtml",
+              "RelativeDocumentMoniker": "PlayaAutos.Web\\Views\\Auth\\Login.cshtml",
+              "ToolTip": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\Views\\Auth\\Login.cshtml",
+              "RelativeToolTip": "PlayaAutos.Web\\Views\\Auth\\Login.cshtml",
+              "ViewState": "AgIAACoAAAAAAAAAAAAAwDwAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-04-23T21:38:37.57Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "PlayaAutos.Web\\Controllers\\AuthController.cs",
+              "ToolTip": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "PlayaAutos.Web\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAACwAAAAAAAAAAAAiwDgAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-23T21:33:26.717Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "LoginViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\Models\\LoginViewModel.cs",
+              "RelativeDocumentMoniker": "PlayaAutos.Web\\Models\\LoginViewModel.cs",
+              "ToolTip": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\Models\\LoginViewModel.cs",
+              "RelativeToolTip": "PlayaAutos.Web\\Models\\LoginViewModel.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAiwBYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-23T21:32:42.977Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\Program.cs",
+              "RelativeDocumentMoniker": "PlayaAutos.Web\\Program.cs",
+              "ToolTip": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\Program.cs",
+              "RelativeToolTip": "PlayaAutos.Web\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-23T21:22:09.613Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ApiService.cs",
+              "DocumentMoniker": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\Services\\ApiService.cs",
+              "RelativeDocumentMoniker": "PlayaAutos.Web\\Services\\ApiService.cs",
+              "ToolTip": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\Services\\ApiService.cs",
+              "RelativeToolTip": "PlayaAutos.Web\\Services\\ApiService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-23T21:21:37.676Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "PlayaAutos.Web",
+              "DocumentMoniker": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\PlayaAutos.Web.csproj",
+              "RelativeDocumentMoniker": "PlayaAutos.Web\\PlayaAutos.Web.csproj",
+              "ToolTip": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\PlayaAutos.Web.csproj",
+              "RelativeToolTip": "PlayaAutos.Web\\PlayaAutos.Web.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-04-23T21:21:00.73Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\appsettings.json",
+              "RelativeDocumentMoniker": "PlayaAutos.Web\\appsettings.json",
+              "ToolTip": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.Web\\appsettings.json",
+              "RelativeToolTip": "PlayaAutos.Web\\appsettings.json",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-04-23T21:18:30.887Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Factura.cs",
+              "DocumentMoniker": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.API\\Models\\Factura.cs",
+              "RelativeDocumentMoniker": "PlayaAutos.API\\Models\\Factura.cs",
+              "ToolTip": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.API\\Models\\Factura.cs",
+              "RelativeToolTip": "PlayaAutos.API\\Models\\Factura.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAYwBEAAAA3AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-21T03:19:02.526Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.API\\Data\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "PlayaAutos.API\\Data\\AppDbContext.cs",
+              "ToolTip": "C:\\Users\\adali\\OneDrive\\Escritorio\\DESARROLLO 2026\\PlayadeAutos\\PlayaAutos\\PlayaAutos.API\\Data\\AppDbContext.cs",
+              "RelativeToolTip": "PlayaAutos.API\\Data\\AppDbContext.cs",
+              "ViewState": "AgIAAKEAAAAAAAAAAAAwwK8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-19T21:30:28.855Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
