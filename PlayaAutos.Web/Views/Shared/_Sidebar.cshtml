@@ -42,7 +42,6 @@
                     <i class="fa-solid fa-car"></i>Vehículos
                 </a>
             </li>
-
             <li class="nav-item">
                 <a class="nav-link @(IsActive("/Clientes") ? "active" : "")" href="/Clientes">
                     <i class="fa-solid fa-users"></i>Clientes
@@ -58,6 +57,12 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link @(IsActive("/Cuotas") ? "active" : "")" href="/Cuotas">
+                    <i class="fa-solid fa-coins"></i>Cuotas
+                </a>
+            </li>
+
+            <li class="nav-item">
                 <a class="nav-link @(IsActive("/Citas") ? "active" : "")" href="/Citas">
                     <i class="fa-solid fa-calendar-check"></i>Citas
                 </a>
@@ -68,8 +73,28 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link @(IsActive("/NotasCredito") ? "active" : "")" href="/NotasCredito">
+                    <i class="fa-solid fa-file-circle-minus"></i>Notas de Crédito
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link @(IsActive("/Caja") ? "active" : "")" href="/Caja">
                     <i class="fa-solid fa-cash-register"></i>Caja
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(IsActive("/Tasaciones") ? "active" : "")" href="/Tasaciones">
+                    <i class="fa-solid fa-car-burst"></i>Tasaciones
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(IsActive("/Consignas") ? "active" : "")" href="/Consignas">
+                    <i class="fa-solid fa-file-contract"></i>Consignas
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(IsActive("/MarcasModelos") ? "active" : "")" href="/MarcasModelos">
+                    <i class="fa-solid fa-layer-group"></i>Marcas y Modelos
                 </a>
             </li>
         </ul>
@@ -79,12 +104,14 @@
             <div class="sidebar-section-label" style="margin-top:0.75rem;">Administración</div>
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a class="nav-link @(IsActive("/Usuarios") ? "active" : "")" href="/Usuarios">
+                    <a class="nav-link @(IsActive("/Usuarios") ? "active" : "")" href="/Usuarios"
+                           title="Usuarios" data-bs-toggle="tooltip" data-bs-placement="right">
                         <i class="fa-solid fa-users-gear"></i>Usuarios
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @(IsActive("/Timbrados") ? "active" : "")" href="/Timbrados">
+                    <a class="nav-link @(IsActive("/Timbrados") ? "active" : "")" href="/Timbrados"
+                           title="Timbrados" data-bs-toggle="tooltip" data-bs-placement="right">
                         <i class="fa-solid fa-stamp"></i>Timbrados
                     </a>
                 </li>

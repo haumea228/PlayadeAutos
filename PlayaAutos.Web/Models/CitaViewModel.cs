@@ -18,9 +18,8 @@ namespace PlayaAutos.Web.Models
         [Display(Name = "Vendedor asignado")]
         public int VendedorId { get; set; }
 
-        [Required(ErrorMessage = "Seleccione el estado de la cita.")]
         [Display(Name = "Estado")]
-        public int EstadoCitaId { get; set; }
+        public int EstadoCitaId { get; set; } = 1;
 
         [Required(ErrorMessage = "La fecha y hora son obligatorias.")]
         [Display(Name = "Fecha y hora")]
@@ -64,6 +63,7 @@ namespace PlayaAutos.Web.Models
         public string Vendedor { get; set; } = string.Empty;
         public string Estado { get; set; } = string.Empty;
         public string? EstadoColor { get; set; }
+        public int EstadoCitaId { get; set; }
         public DateTime FechaHora { get; set; }
         public string TipoCita { get; set; } = string.Empty;
         public string? Observaciones { get; set; }

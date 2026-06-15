@@ -13,8 +13,10 @@
         public string? RutaPDF { get; set; }
         public string Estado { get; set; } = "Vigente";
         public DateTime FechaGeneracion { get; set; } = DateTime.Now;
+        public int? TasacionVehiculoId { get; set; }
 
         public Vehiculo Vehiculo { get; set; } = null!;
         public Consignante Consignante { get; set; } = null!;
+        public TasacionVehiculo? Tasacion { get; set; }
     }
 }

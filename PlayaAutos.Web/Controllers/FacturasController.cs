@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace PlayaAutos.Web.Controllers
 {
-    public class FacturasController : Controller
+    public class FacturasController : AdminVendedorController
     {
         private readonly ApiService _api;
 
@@ -54,18 +54,21 @@ namespace PlayaAutos.Web.Controllers
         {
             if (!EstaAutenticado()) return RedirectToAction("Login", "Auth");
 
-            var dto = await _api.GetAsync<JsonElement>($"api/Facturas/{id}");
-            if (dto.ValueKind == JsonValueKind.Undefined) return NotFound();
+            var response = await _api.GetRawAsync($"api/Facturas/{id}/pdf");
 
-            var rutaPDF = Get(dto, "rutaPDF");
-            if (string.IsNullOrEmpty(rutaPDF))
+            if (!response.IsSuccessStatusCode)
             {
-                TempData["Error"] = "PDF no disponible aún.";
+                TempData["Error"] = "No se pudo generar el PDF de la factura.";
                 return RedirectToAction(nameof(Detalle), new { id });
             }
 
-            // Redirigir a la URL del PDF
-            return Redirect(rutaPDF);
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+
+            var nombreArchivo = response.Content.Headers.ContentDisposition?.FileNameStar
+                             ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+                             ?? $"Factura-{id}.pdf";
+
+            return File(bytes, "application/pdf", nombreArchivo);
         }
 
         // ── Helpers ──────────────────────────────────────────────────────

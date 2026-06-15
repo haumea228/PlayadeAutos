@@ -18,5 +18,9 @@
         public Venta? Venta { get; set; }
         public Cuota? Cuota { get; set; }
         public GastoVehiculo? GastoVehiculo { get; set; }
+        
+        // Cierre Caja
+        public int? CierreId { get; set; }
+        public CierreCaja? Cierre { get; set; }
     }
 }

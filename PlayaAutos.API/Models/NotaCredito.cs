@@ -1,4 +1,4 @@
-﻿namespace PlayaAutos.API.Models
+namespace PlayaAutos.API.Models
 {
     public class NotaCredito
     {
@@ -13,9 +13,11 @@
         public DateTime FechaGeneracion { get; set; } = DateTime.Now;
         public int UsuarioGeneracion { get; set; }
         public int TimbradoId { get; set; }
+        public int? TasacionVehiculoId { get; set; }
 
         public Venta Venta { get; set; } = null!;
         public Vehiculo Vehiculo { get; set; } = null!;
         public Timbrado Timbrado { get; set; } = null!;
+        public TasacionVehiculo? TasacionVehiculo { get; set; }
     }
 }

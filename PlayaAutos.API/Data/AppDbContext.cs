@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PlayaAutos.API.Models;
 
 namespace PlayaAutos.API.Data
@@ -14,6 +14,7 @@ namespace PlayaAutos.API.Data
         public DbSet<CondicionVehiculo> CondicionesVehiculo { get; set; }
         public DbSet<EstadoVehiculo> EstadosVehiculo { get; set; }
         public DbSet<OrigenVehiculo> OrigenesVehiculo { get; set; }
+        public DbSet<CierreCaja> CierresCaja { get; set; }
 
         // Gastos
         public DbSet<TipoGasto> TiposGasto { get; set; }
@@ -37,6 +38,10 @@ namespace PlayaAutos.API.Data
         public DbSet<FormaPago> FormasPago { get; set; }
         public DbSet<Venta> Ventas { get; set; }
         public DbSet<Cuota> Cuotas { get; set; }
+        public DbSet<PagoVenta> PagosVenta { get; set; }
+
+        // Tasaciones
+        public DbSet<TasacionVehiculo> TasacionesVehiculo { get; set; }
 
         // Caja
         public DbSet<TipoMovimiento> TiposMovimiento { get; set; }
@@ -70,6 +75,8 @@ namespace PlayaAutos.API.Data
             modelBuilder.Entity<FormaPago>().HasKey(f => f.FormaPagoId);
             modelBuilder.Entity<Venta>().HasKey(v => v.VentaId);
             modelBuilder.Entity<Cuota>().HasKey(c => c.CuotaId);
+            modelBuilder.Entity<PagoVenta>().HasKey(p => p.PagoVentaId);
+            modelBuilder.Entity<TasacionVehiculo>().HasKey(t => t.TasacionVehiculoId);
             modelBuilder.Entity<TipoMovimiento>().HasKey(t => t.TipoMovimientoId);
             modelBuilder.Entity<MovimientoCaja>().HasKey(m => m.MovimientoId);
             modelBuilder.Entity<Factura>().HasKey(f => f.FacturaId);
@@ -84,7 +91,7 @@ namespace PlayaAutos.API.Data
             modelBuilder.Entity<EstadoVehiculo>().HasIndex(e => e.Descripcion).IsUnique();
             modelBuilder.Entity<TipoGasto>().HasIndex(t => t.Descripcion).IsUnique();
             modelBuilder.Entity<Usuario>().HasIndex(u => u.UsuarioEmail).IsUnique();
-            modelBuilder.Entity<Cliente>().HasIndex(c => c.CI_RUC).IsUnique();
+            modelBuilder.Entity<Cliente>().HasIndex(c => c.CI_RUC).IsUnique().HasFilter("[CI_RUC] IS NOT NULL");
             modelBuilder.Entity<Consignante>().HasIndex(c => c.ClienteId).IsUnique();
             modelBuilder.Entity<Factura>().HasIndex(f => f.NumeroFactura).IsUnique();
             modelBuilder.Entity<Factura>().HasIndex(f => f.VentaId).IsUnique();
@@ -99,7 +106,6 @@ namespace PlayaAutos.API.Data
             modelBuilder.Entity<Venta>().Property(v => v.MontoTotal).HasColumnType("numeric(15,0)");
             modelBuilder.Entity<Venta>().Property(v => v.MontoEntrada).HasColumnType("numeric(15,0)");
             modelBuilder.Entity<Venta>().Property(v => v.SaldoFinanciado).HasColumnType("numeric(15,0)");
-            modelBuilder.Entity<Venta>().Property(v => v.ValorPermuta).HasColumnType("numeric(15,0)");
             modelBuilder.Entity<Cuota>().Property(c => c.Monto).HasColumnType("numeric(15,0)");
             modelBuilder.Entity<Cuota>().Property(c => c.MontoPagado).HasColumnType("numeric(15,0)");
             modelBuilder.Entity<Cuota>().Property(c => c.MontoRecargo).HasColumnType("numeric(15,0)");
@@ -110,6 +116,10 @@ namespace PlayaAutos.API.Data
             modelBuilder.Entity<NotaCredito>().Property(n => n.Monto).HasColumnType("numeric(15,0)");
             modelBuilder.Entity<Cliente>().Property(c => c.RangoPrecioMin).HasColumnType("numeric(15,0)");
             modelBuilder.Entity<Cliente>().Property(c => c.RangoPrecioMax).HasColumnType("numeric(15,0)");
+            modelBuilder.Entity<TasacionVehiculo>().Property(t => t.ValorTasacion).HasColumnType("numeric(15,0)");
+            modelBuilder.Entity<TasacionVehiculo>().Property(t => t.PrecioVenta).HasColumnType("numeric(15,0)");
+            modelBuilder.Entity<TasacionVehiculo>().Property(t => t.KilometrajeVehiculo).HasColumnType("numeric(10,0)");
+            modelBuilder.Entity<PagoVenta>().Property(p => p.Monto).HasColumnType("numeric(15,0)");
 
             // Relaciones Venta
             modelBuilder.Entity<Venta>()
@@ -128,6 +138,45 @@ namespace PlayaAutos.API.Data
                 .HasOne(v => v.Cliente)
                 .WithMany(c => c.Ventas)
                 .HasForeignKey(v => v.ClienteId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Relaciones PagoVenta
+            modelBuilder.Entity<PagoVenta>()
+                .HasOne(p => p.Venta)
+                .WithMany(v => v.PagosVenta)
+                .HasForeignKey(p => p.VentaId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PagoVenta>()
+                .HasOne(p => p.FormaPago)
+                .WithMany(f => f.PagosVenta)
+                .HasForeignKey(p => p.FormaPagoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PagoVenta>()
+                .HasOne(p => p.TasacionVehiculo)
+                .WithMany(t => t.PagosVenta)
+                .HasForeignKey(p => p.TasacionVehiculoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Relaciones TasacionVehiculo
+            modelBuilder.Entity<TasacionVehiculo>()
+                .HasOne(t => t.Cliente)
+                .WithMany()
+                .HasForeignKey(t => t.ClienteId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TasacionVehiculo>()
+                .HasOne(t => t.Vehiculo)
+                .WithMany()
+                .HasForeignKey(t => t.VehiculoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Relación NotaCredito -> TasacionVehiculo
+            modelBuilder.Entity<NotaCredito>()
+                .HasOne(n => n.TasacionVehiculo)
+                .WithMany()
+                .HasForeignKey(n => n.TasacionVehiculoId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Relación Cita
@@ -155,6 +204,7 @@ namespace PlayaAutos.API.Data
                 .WithOne(m => m.Venta)
                 .HasForeignKey(m => m.VentaId)
                 .OnDelete(DeleteBehavior.Restrict);
+
             // Decimales con precisión explícita
             modelBuilder.Entity<Consignante>()
                 .Property(c => c.PorcentajeComisionDefault)
@@ -171,6 +221,20 @@ namespace PlayaAutos.API.Data
             modelBuilder.Entity<ContratoConsigna>()
                 .Property(c => c.PorcentajeComision)
                 .HasColumnType("decimal(5,2)");
+            // CierreCaja
+            modelBuilder.Entity<CierreCaja>().ToTable("CierreCaja").HasKey(c => c.CierreId);
+
+            modelBuilder.Entity<MovimientoCaja>()
+                .HasOne(m => m.Cierre)
+                .WithMany(c => c.Movimientos)
+                .HasForeignKey(m => m.CierreId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CierreCaja>()
+                .HasOne(c => c.Usuario)
+                .WithMany()
+                .HasForeignKey(c => c.UsuarioCierre)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

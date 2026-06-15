@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using PlayaAutos.API.Data;
 using PlayaAutos.API.DTOs;
 using PlayaAutos.API.Models;
+using PlayaAutos.API.Services;
 
 namespace PlayaAutos.API.Controllers
 {
@@ -101,6 +102,54 @@ namespace PlayaAutos.API.Controllers
                 Total = f.Total,
                 RutaPDF = f.RutaPDF
             };
+        }
+
+        // GET: api/facturas/{id}/pdf
+        [HttpGet("{id}/pdf")]
+        public async Task<IActionResult> GetPdf(int id)
+        {
+            var f = await _context.Facturas
+                .Include(f => f.Timbrado)
+                .Include(f => f.Venta).ThenInclude(v => v.Cliente)
+                .Include(f => f.Venta).ThenInclude(v => v.Vehiculo)
+                    .ThenInclude(ve => ve.Modelo).ThenInclude(m => m.Marca)
+                .Include(f => f.Venta).ThenInclude(v => v.Vehiculo)
+                    .ThenInclude(ve => ve.Tipo)
+                .Include(f => f.Venta).ThenInclude(v => v.Vehiculo)
+                    .ThenInclude(ve => ve.Condicion)
+                .Include(f => f.Venta).ThenInclude(v => v.PagosVenta).ThenInclude(p => p.FormaPago)
+                .FirstOrDefaultAsync(f => f.FacturaId == id);
+
+            if (f == null) return NotFound();
+
+            var datos = new FacturaPdfDataDto
+            {
+                NumeroFactura          = f.NumeroFactura,
+                FechaEmision           = f.FechaEmision,
+                NumeroTimbrado         = f.Timbrado.NumeroTimbrado,
+                TimbradoVigenciaDesde  = f.Timbrado.FechaInicio,
+                TimbradoVigenciaHasta  = f.Timbrado.FechaVencimiento,
+                ClienteNombre          = f.Venta.Cliente.Nombre,
+                ClienteRUC             = f.Venta.Cliente.CI_RUC,
+                ClienteDireccion       = f.Venta.Cliente.Direccion,
+                ClienteTelefono        = f.Venta.Cliente.Telefono,
+                VehiculoMarca          = f.Venta.Vehiculo.Modelo.Marca.Nombre,
+                VehiculoModelo         = f.Venta.Vehiculo.Modelo.Nombre,
+                VehiculoTipo           = f.Venta.Vehiculo.Tipo.Descripcion,
+                VehiculoCondicion      = f.Venta.Vehiculo.Condicion.Descripcion,
+                VehiculoAnio           = f.Venta.Vehiculo.Anio,
+                VehiculoColor          = f.Venta.Vehiculo.Color,
+                VehiculoDescripcion    = f.Venta.Vehiculo.Descripcion,
+                FormaPago              = string.Join(", ", f.Venta.PagosVenta.Select(p => p.FormaPago.Descripcion)),
+                Subtotal               = f.Subtotal,
+                IVA                    = f.IVA,
+                Total                  = f.Total
+            };
+
+            var pdfBytes = FacturaPdfService.Generar(datos);
+            var nombreArchivo = $"Factura-{f.NumeroFactura.Replace("/", "-").Replace("\\", "-")}.pdf";
+
+            return File(pdfBytes, "application/pdf", nombreArchivo);
         }
 
         // POST: api/facturas

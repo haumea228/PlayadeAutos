@@ -39,6 +39,10 @@ namespace PlayaAutos.Web.Models
 
         [Display(Name = "Activo")]
         public bool Activo { get; set; } = true;
+
+        public bool EsConsignante { get; set; }
+        public int? ConsignanteId { get; set; }
+        public decimal? PorcentajeComisionDefault { get; set; }
     }
 
     public class ClienteListItem

@@ -1,4 +1,4 @@
-﻿namespace PlayaAutos.API.Models
+namespace PlayaAutos.API.Models
 {
     public class Cuota
     {
@@ -11,6 +11,8 @@
         public long? MontoPagado { get; set; }
         public long? MontoRecargo { get; set; }
         public int? FormaPagoId { get; set; }
+        public string? ComprobanteImagen { get; set; }
+        public string? ObservacionPago { get; set; }
         public string Estado { get; set; } = "Pendiente";
         public DateTime? FechaRegistroPago { get; set; }
 

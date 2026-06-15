@@ -60,6 +60,7 @@
                     <option value="">Todos los roles</option>
                     <option value="AdministradorP">Administrador</option>
                     <option value="Vendedor">Vendedor</option>
+                    <option value="Cliente">Cliente</option>
                 </select>
                 <select id="filtroEstado" class="pa-input" style="max-width:160px;">
                     <option value="">Todos los estados</option>
@@ -137,20 +138,26 @@
                                             <span style="color:var(--pa-muted);">—</span>
                                         }
                                     </td>
-                                    <td>
-                                        @if (u.Rol == "AdministradorP")
-                                        {
-                                            <span class="rol-badge" style="background:rgba(233,69,96,.12);color:var(--pa-accent);">
-                                                <i class="fa-solid fa-shield-halved fa-xs me-1"></i>Admin
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="rol-badge" style="background:rgba(59,130,246,.12);color:var(--pa-info);">
-                                                <i class="fa-solid fa-user-tie fa-xs me-1"></i>Vendedor
-                                            </span>
-                                        }
-                                    </td>
+                                        <td> 
+                                            @if (u.Rol == "AdministradorP")
+                                            {
+                                                <span class="rol-badge" style="background:rgba(233,69,96,.12);color:var(--pa-accent);">
+                                                    <i class="fa-solid fa-shield-halved fa-xs me-1"></i>Admin
+                                                </span>
+                                            }
+                                            else if (u.Rol == "Cliente")
+                                            {
+                                                <span class="rol-badge" style="background:rgba(107,114,128,.12);color:#6b7280;">
+                                                    <i class="fa-solid fa-user fa-xs me-1"></i>Cliente
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="rol-badge" style="background:rgba(59,130,246,.12);color:var(--pa-info);">
+                                                    <i class="fa-solid fa-user-tie fa-xs me-1"></i>Vendedor
+                                                </span>
+                                            }
+                                        </td>
                                     <td style="font-size:0.83rem;color:var(--pa-muted);">
                                         @u.FechaAltaUsuario.ToString("dd/MM/yyyy")
                                     </td>

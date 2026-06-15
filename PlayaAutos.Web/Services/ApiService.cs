@@ -46,5 +46,11 @@
             AgregarToken();
             return await _httpClient.DeleteAsync(endpoint);
         }
+
+        public async Task<HttpResponseMessage> GetRawAsync(string endpoint)
+        {
+            AgregarToken();
+            return await _httpClient.GetAsync(endpoint);
+        }
     }
 }

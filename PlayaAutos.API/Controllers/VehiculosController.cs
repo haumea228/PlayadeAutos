@@ -103,6 +103,46 @@ namespace PlayaAutos.API.Controllers
                 .ToListAsync();
         }
 
+        // GET: api/vehiculos/catalogo/{id}  — público, sin token
+        [AllowAnonymous]
+        [HttpGet("catalogo/{id}")]
+        public async Task<ActionResult<VehiculoDto>> GetCatalogoDetalle(int id)
+        {
+            var v = await _context.Vehiculos
+                .Include(v => v.Modelo).ThenInclude(m => m.Marca)
+                .Include(v => v.Tipo)
+                .Include(v => v.Condicion)
+                .Include(v => v.Estado)
+                .Include(v => v.Fotos)
+                .FirstOrDefaultAsync(v => v.VehiculoId == id && v.Estado.VisibleEnCatalogo);
+
+            if (v == null) return NotFound();
+
+            return new VehiculoDto
+            {
+                VehiculoId    = v.VehiculoId,
+                Marca         = v.Modelo.Marca.Nombre,
+                Modelo        = v.Modelo.Nombre,
+                Tipo          = v.Tipo.Descripcion,
+                Condicion     = v.Condicion.Descripcion,
+                Estado        = v.Estado.Descripcion,
+                Anio          = v.Anio,
+                Color         = v.Color,
+                Kilometraje   = v.Kilometraje,
+                PrecioVenta   = v.PrecioVenta,
+                Descripcion   = v.Descripcion,
+                FotoPrincipal = v.Fotos.Where(f => f.EsPrincipal).Select(f => f.URL).FirstOrDefault(),
+                Fotos = v.Fotos.OrderBy(f => f.Orden).Select(f => new FotoVehiculoDto
+                {
+                    FotoId        = f.FotoId,
+                    URL           = f.URL,
+                    NombreArchivo = f.NombreArchivo,
+                    EsPrincipal   = f.EsPrincipal,
+                    Orden         = f.Orden
+                }).ToList()
+            };
+        }
+
         // GET: api/vehiculos/5
         [HttpGet("{id}")]
         public async Task<ActionResult<VehiculoDto>> GetVehiculo(int id)

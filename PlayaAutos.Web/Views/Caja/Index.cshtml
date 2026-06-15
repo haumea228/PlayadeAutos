@@ -5,7 +5,7 @@
     var balance = ViewBag.Balance as PlayaAutos.Web.Models.BalanceViewModel;
     var desde = ViewBag.Desde as DateTime? ?? DateTime.Today.AddDays(-30);
     var hasta = ViewBag.Hasta as DateTime? ?? DateTime.Today;
-    var tipoId = ViewBag.TipoId as int?;
+    var signo = ViewBag.Signo as string;
 }
 <!DOCTYPE html>
 <html lang="es">
@@ -22,9 +22,7 @@
 </head>
 <body>
     <div class="pa-app">
-
         @await Html.PartialAsync("_Sidebar")
-
         <div class="pa-content">
 
             <div class="pa-page-header d-flex align-items-center justify-content-between flex-wrap gap-3">
@@ -32,9 +30,28 @@
                     <h4><i class="fa-solid fa-cash-register me-2" style="color:var(--pa-accent);"></i>Caja</h4>
                     <p>Control de ingresos y egresos</p>
                 </div>
-                <a href="/Caja/Crear" class="btn-pa-primary">
-                    <i class="fa-solid fa-plus"></i> Nuevo Movimiento
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="/Caja/Historial" class="btn-pa-ghost">
+                        <i class="fa-solid fa-clock-rotate-left me-1"></i> Historial
+                    </a>
+                    <button type="button" class="btn-pa-ghost" onclick="exportarExcel()" title="Exportar a Excel">
+                        <i class="fa-solid fa-file-excel me-1"></i> Exportar
+                    </button>
+                    @if (Model != null && Model.Any() && Context.Session.GetString("Rol") == "AdministradorP")
+                    {
+                        <form asp-action="Cerrar" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <button type="button" class="btn-pa-primary"
+                                    style="background:#ef4444;border-color:#ef4444;"
+                                    onclick="abrirModalCerrar()">
+                                <i class="fa-solid fa-lock me-1"></i> Cerrar Caja
+                            </button>
+                        </form>
+                    }
+                    <a href="/Caja/Crear" class="btn-pa-primary">
+                        <i class="fa-solid fa-plus"></i> Nuevo Movimiento
+                    </a>
+                </div>
             </div>
 
             @if (TempData["Exito"] != null)
@@ -50,71 +67,43 @@
                 </div>
             }
 
-            <!-- Balance Cards -->
             <div class="row g-3 mb-3">
                 <div class="col-md-4">
                     <div class="pa-card p-3" style="border-left: 3px solid #22c55e;">
-                        <div style="font-size:0.8rem;color:var(--pa-muted);">
-                            <i class="fa-solid fa-arrow-up me-1"></i>INGRESOS
-                        </div>
-                        <div style="font-size:1.3rem;font-weight:700;color:#22c55e;">
-                            Gs. @(balance?.TotalIngresos.ToString("N0") ?? "0")
-                        </div>
+                        <div style="font-size:0.8rem;color:var(--pa-muted);"><i class="fa-solid fa-arrow-up me-1"></i>INGRESOS</div>
+                        <div style="font-size:1.3rem;font-weight:700;color:#22c55e;">Gs. @(balance?.TotalIngresos.ToString("N0") ?? "0")</div>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="pa-card p-3" style="border-left: 3px solid #ef4444;">
-                        <div style="font-size:0.8rem;color:var(--pa-muted);">
-                            <i class="fa-solid fa-arrow-down me-1"></i>EGRESOS
-                        </div>
-                        <div style="font-size:1.3rem;font-weight:700;color:#ef4444;">
-                            Gs. @(balance?.TotalEgresos.ToString("N0") ?? "0")
-                        </div>
+                        <div style="font-size:0.8rem;color:var(--pa-muted);"><i class="fa-solid fa-arrow-down me-1"></i>EGRESOS</div>
+                        <div style="font-size:1.3rem;font-weight:700;color:#ef4444;">Gs. @(balance?.TotalEgresos.ToString("N0") ?? "0")</div>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="pa-card p-3" style="border-left: 3px solid var(--pa-accent);">
-                        <div style="font-size:0.8rem;color:var(--pa-muted);">
-                            <i class="fa-solid fa-wallet me-1"></i>SALDO
-                        </div>
-                        <div style="font-size:1.3rem;font-weight:700;color:var(--pa-text);">
-                            Gs. @(balance?.Saldo.ToString("N0") ?? "0")
-                        </div>
+                        <div style="font-size:0.8rem;color:var(--pa-muted);"><i class="fa-solid fa-wallet me-1"></i>SALDO</div>
+                        <div style="font-size:1.3rem;font-weight:700;color:var(--pa-text);">Gs. @(balance?.Saldo.ToString("N0") ?? "0")</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Filtros -->
             <div class="pa-card p-3 mb-3">
                 <form method="get" class="d-flex flex-wrap gap-3 align-items-end">
                     <div>
                         <label class="pa-label" style="font-size:0.8rem;">Desde</label>
-                        <input type="date" name="desde" value="@desde.ToString("yyyy-MM-dd")" class="pa-input" style="max-width:150px;" />
+                        <input type="date" name="desde" id="inputDesde" value="@desde.ToString("yyyy-MM-dd")" class="pa-input" style="max-width:150px;" />
                     </div>
                     <div>
                         <label class="pa-label" style="font-size:0.8rem;">Hasta</label>
-                        <input type="date" name="hasta" value="@hasta.ToString("yyyy-MM-dd")" class="pa-input" style="max-width:150px;" />
+                        <input type="date" name="hasta" id="inputHasta" value="@hasta.ToString("yyyy-MM-dd")" class="pa-input" style="max-width:150px;" />
                     </div>
                     <div>
                         <label class="pa-label" style="font-size:0.8rem;">Tipo</label>
-                        <select name="tipoId" class="pa-input" style="max-width:180px;">
+                        <select name="signo" id="selectSigno" class="pa-input" style="max-width:200px;">
                             <option value="">Todos los movimientos</option>
-                            @if (tipoId == 1)
-                            {
-                                <option value="1" selected>Ingresos (+)</option>
-                            }
-                            else
-                            {
-                                <option value="1">Ingresos (+)</option>
-                            }
-                            @if (tipoId == 2)
-                            {
-                                <option value="2" selected>Egresos (-)</option>
-                            }
-                            else
-                            {
-                                <option value="2">Egresos (-)</option>
-                            }
+                            <option value="Ingreso" selected="@(signo == "Ingreso")">Ingresos (+)</option>
+                            <option value="Egreso" selected="@(signo == "Egreso")">Egresos (-)</option>
                         </select>
                     </div>
                     <button type="submit" class="btn-pa-primary">
@@ -126,7 +115,6 @@
                 </form>
             </div>
 
-            <!-- Tabla -->
             <div class="pa-card" style="overflow:hidden;">
                 @if (!Model.Any())
                 {
@@ -140,13 +128,7 @@
                     <div style="overflow-x:auto;">
                         <table class="pa-table" id="tablaMovimientos">
                             <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Tipo</th>
-                                    <th>Descripción</th>
-                                    <th>Referencia</th>
-                                    <th>Monto</th>
-                                </tr>
+                                <tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Referencia</th><th>Monto</th></tr>
                             </thead>
                             <tbody>
                                 @foreach (var m in Model)
@@ -157,8 +139,7 @@
                                             <div style="font-size:0.75rem;color:var(--pa-muted);">@m.Fecha.ToString("HH:mm")</div>
                                         </td>
                                         <td>
-                                            <span class="tipo-badge" style="background:@(m.Signo == "+" ? "rgba(34,197,94,.12)" : "rgba(239,68,68,.12)");
-                                                color:@(m.Signo == "+" ? "#22c55e" : "#ef4444");">
+                                            <span class="tipo-badge" style="background:@(m.Signo == "+" ? "rgba(34,197,94,.12)" : "rgba(239,68,68,.12)");color:@(m.Signo == "+" ? "#22c55e" : "#ef4444");">
                                                 @m.TipoMovimiento
                                             </span>
                                         </td>
@@ -172,13 +153,21 @@
                                                 }
                                                 else if (m.Referencia.Contains("Cuota"))
                                                 {
+
                                                     <i class="fa-solid fa-calendar-check me-1" style="color:#a855f7;"></i>
                                                 }
                                                 else if (m.Referencia.Contains("Gasto"))
                                                 {
+
                                                     <i class="fa-solid fa-receipt me-1" style="color:#ef4444;"></i>
                                                 }
                                                 <span>@m.Referencia</span>
+                                                @if (!string.IsNullOrEmpty(m.Comentarios))
+                                                {
+                                                    <div style="font-size:0.72rem;color:var(--pa-muted);margin-top:2px;">
+                                                        <i class="fa-solid fa-circle-info me-1"></i>@m.Comentarios
+                                                    </div>
+                                                }
                                             }
                                             else
                                             {
@@ -202,6 +191,32 @@
                     @Model.Count movimiento(s) en este período
                 </p>
             }
+
+            <!-- Modal Cerrar Caja -->
+            <div id="modalCerrarCaja" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;">
+                <div style="background:var(--pa-surface);border:1px solid var(--pa-border);border-radius:14px;padding:2rem;max-width:460px;width:90%;text-align:center;">
+                    <div style="width:54px;height:54px;background:rgba(239,68,68,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                        <i class="fa-solid fa-lock" style="color:#ef4444;font-size:1.3rem;"></i>
+                    </div>
+                    <h5 style="margin-bottom:0.5rem;font-weight:700;">Cerrar Caja</h5>
+                    <p style="color:var(--pa-muted);font-size:0.9rem;margin-bottom:0.5rem;">
+                        ¿Está seguro de cerrar la caja?
+                    </p>
+                    <p style="color:#ca8a04;font-size:0.82rem;margin-bottom:1.5rem;background:rgba(234,179,8,.08);padding:0.5rem;border-radius:8px;">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                        Los movimientos actuales quedarán guardados en el histórico y el balance volverá a 0.
+                    </p>
+                    <form id="formCerrarCaja" method="post" action="/Caja/Cerrar">
+                        @Html.AntiForgeryToken()
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn-pa-ghost" onclick="cerrarModalCerrar()">Cancelar</button>
+                            <button type="submit" class="btn-pa-primary" style="background:#ef4444;border-color:#ef4444;">
+                                <i class="fa-solid fa-lock me-1"></i> Sí, cerrar caja
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -215,5 +230,27 @@
                 white-space: nowrap;
             }
     </style>
+
+    <script>
+            function exportarExcel() {
+                const desde = document.getElementById('inputDesde')?.value || '';
+                const hasta = document.getElementById('inputHasta')?.value || '';
+                const signo = document.getElementById('selectSigno')?.value || '';
+                window.location.href = '/Caja/ExportarExcel?desde=' + encodeURIComponent(desde) +
+                                       '&hasta=' + encodeURIComponent(hasta) +
+                                       '&signo=' + encodeURIComponent(signo);
+            }
+
+                        function abrirModalCerrar() {
+                document.getElementById('modalCerrarCaja').style.display = 'flex';
+            }
+            function cerrarModalCerrar() {
+                document.getElementById('modalCerrarCaja').style.display = 'none';
+            }
+            document.getElementById('modalCerrarCaja').addEventListener('click', function(e) {
+                if (e.target === this) cerrarModalCerrar();
+            });
+
+    </script>
 </body>
 </html>

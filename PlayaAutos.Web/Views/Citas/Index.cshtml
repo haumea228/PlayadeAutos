@@ -19,6 +19,11 @@
 <body>
 <div class="pa-app">
 
+    @* ✅ CORRECCIÓN: Form oculto para exponer el token CSRF al JavaScript *@
+    <form id="formToken" style="display:none;">
+        @Html.AntiForgeryToken()
+    </form>
+
     @await Html.PartialAsync("_Sidebar")
 
     <div class="pa-content">
@@ -71,7 +76,7 @@
             </div>
         </div>
 
-        <!-- Vista de tarjetas para móvil, tabla para desktop -->
+        <!-- Vista desktop -->
         <div class="d-none d-md-block">
             <div class="pa-card" style="overflow:hidden;">
                 @if (!Model.Any())
@@ -140,7 +145,7 @@
                                             }
                                         </td>
                                         <td>
-                                            <span class="estado-badge" style="background:@(c.EstadoColor ?? "rgba(107,114,128,.12)");color:@(c.EstadoColor?.Replace("rgba(", "").Replace(")", "")?.Split(',')[0] ?? "#6b7280");">
+                                            <span class="estado-badge" style="background:@(c.EstadoColor ?? "rgba(107,114,128,.12)");">
                                                 @c.Estado
                                             </span>
                                         </td>
@@ -184,7 +189,7 @@
             </div>
         </div>
 
-        <!-- Vista de tarjetas para móvil -->
+        <!-- Vista móvil -->
         <div class="d-md-none">
             @foreach (var c in Model)
             {
@@ -213,9 +218,26 @@
                             <a href="/Citas/Editar/@c.CitaId" class="action-btn edit">
                                 <i class="fa-solid fa-pen"></i>
                             </a>
+                            @if (c.Estado == "Pendiente")
+                            {
+                                <button type="button" class="action-btn confirmar"
+                                        onclick="cambiarEstado(@c.CitaId, 'Confirmada')"
+                                        title="Confirmar">
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                            }
+                            @if (c.Estado == "Confirmada")
+                            {
+                                <button type="button" class="action-btn realizar"
+                                        onclick="cambiarEstado(@c.CitaId, 'Realizada')"
+                                        title="Marcar como realizada">
+                                    <i class="fa-solid fa-flag-checkered"></i>
+                                </button>
+                            }
                             @if (c.Estado != "Cancelada" && c.Estado != "Realizada")
                             {
-                                <button class="action-btn delete" onclick="confirmarCancelar(@c.CitaId, '@c.Cliente.Replace("'","\\'")')">
+                                <button class="action-btn delete"
+                                        onclick="confirmarCancelar(@c.CitaId, '@c.Cliente.Replace("'","\\'")')">
                                     <i class="fa-solid fa-xmark"></i>
                                 </button>
                             }
@@ -255,37 +277,36 @@
         color: var(--pa-muted);
         text-decoration: none;
     }
-    .action-btn.edit:hover { background: rgba(59,130,246,.12); border-color: var(--pa-info); color: var(--pa-info); }
+    .action-btn.edit:hover    { background: rgba(59,130,246,.12); border-color: var(--pa-info); color: var(--pa-info); }
     .action-btn.confirmar:hover { background: rgba(34,197,94,.12); border-color: #22c55e; color: #22c55e; }
-    .action-btn.realizar:hover { background: rgba(59,130,246,.12); border-color: var(--pa-info); color: var(--pa-info); }
-    .action-btn.delete:hover { background: rgba(239,68,68,.12); border-color: #ef4444; color: #ef4444; }
-    .cita-card {
-        transition: opacity 0.3s ease;
-    }
+    .action-btn.realizar:hover  { background: rgba(59,130,246,.12); border-color: var(--pa-info); color: var(--pa-info); }
+    .action-btn.delete:hover  { background: rgba(239,68,68,.12); border-color: #ef4444; color: #ef4444; }
 </style>
 
 <script>
+    // ── Filtros ─────────────────────────────────────────────────────────
     function filtrar() {
-        const q = document.getElementById('buscador').value.toLowerCase();
+        const q      = document.getElementById('buscador').value.toLowerCase();
         const estado = document.getElementById('filtroEstado').value;
-        const tipo = document.getElementById('filtroTipo').value;
-        const fecha = document.getElementById('filtroFecha').value;
-        
+        const tipo   = document.getElementById('filtroTipo').value;
+        const fecha  = document.getElementById('filtroFecha').value;
+
         const filas = document.querySelectorAll('#tablaCitas tbody tr, .cita-card');
         let visibles = 0;
-        
+
         filas.forEach(el => {
-            const textoOk = !q || el.textContent.toLowerCase().includes(q);
+            const textoOk  = !q      || el.textContent.toLowerCase().includes(q);
             const estadoOk = !estado || el.dataset.estado === estado;
-            const tipoOk = !tipo || el.dataset.tipo === tipo;
-            const fechaOk = !fecha || el.dataset.fecha === fecha;
-            const mostrar = textoOk && estadoOk && tipoOk && fechaOk;
-            
+            const tipoOk   = !tipo   || el.dataset.tipo   === tipo;
+            const fechaOk  = !fecha  || el.dataset.fecha  === fecha;
+            const mostrar  = textoOk && estadoOk && tipoOk && fechaOk;
+
             el.style.display = mostrar ? '' : 'none';
             if (mostrar) visibles++;
         });
-        
-        document.getElementById('totalVisible').textContent = visibles;
+
+        const totalEl = document.getElementById('totalVisible');
+        if (totalEl) totalEl.textContent = visibles;
     }
 
     document.getElementById('buscador').addEventListener('input', filtrar);
@@ -293,38 +314,53 @@
     document.getElementById('filtroTipo').addEventListener('change', filtrar);
     document.getElementById('filtroFecha').addEventListener('change', filtrar);
 
+    // ── Cambiar estado ──────────────────────────────────────────────────
+    // ✅ CORRECCIÓN: lee el token del formToken oculto que sí existe en el DOM
     function cambiarEstado(citaId, estado) {
+        const estadosMap = {
+            'Confirmada': 2,
+            'Realizada':  3,
+            'Cancelada':  4
+        };
+
+        const estadoCitaId = estadosMap[estado] ?? 0;
+        if (estadoCitaId === 0) { alert('Estado no válido'); return; }
+
+        // ✅ Leer token del formToken oculto
+        const tokenInput = document.querySelector('#formToken input[name="__RequestVerificationToken"]');
+        if (!tokenInput) {
+            alert('No se encontró el token de seguridad. Recargue la página.');
+            return;
+        }
+
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '/Citas/CambiarEstado';
-        
-        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-        if (token) {
-            const tokenInput = document.createElement('input');
-            tokenInput.type = 'hidden';
-            tokenInput.name = '__RequestVerificationToken';
-            tokenInput.value = token;
-            form.appendChild(tokenInput);
-        }
-        
-        const idInput = document.createElement('input');
-        idInput.type = 'hidden';
-        idInput.name = 'id';
-        idInput.value = citaId;
-        form.appendChild(idInput);
-        
-        const estadoInput = document.createElement('input');
-        estadoInput.type = 'hidden';
-        estadoInput.name = 'estadoCitaId';
-        estadoInput.value = estado === 'Confirmada' ? '2' : estado === 'Realizada' ? '3' : '4';
-        form.appendChild(estadoInput);
-        
+
+        const tokenField = document.createElement('input');
+        tokenField.type  = 'hidden';
+        tokenField.name  = '__RequestVerificationToken';
+        tokenField.value = tokenInput.value;
+        form.appendChild(tokenField);
+
+        const idField = document.createElement('input');
+        idField.type  = 'hidden';
+        idField.name  = 'id';
+        idField.value = citaId;
+        form.appendChild(idField);
+
+        const estadoField = document.createElement('input');
+        estadoField.type  = 'hidden';
+        estadoField.name  = 'estadoCitaId';
+        estadoField.value = estadoCitaId;
+        form.appendChild(estadoField);
+
         document.body.appendChild(form);
         form.submit();
     }
 
     function confirmarCancelar(id, cliente) {
-        if (confirm(`¿Está seguro que desea cancelar la cita de "${cliente}"?`)) {
+        if (confirm('¿Está seguro que desea cancelar la cita de "' + cliente + '"?')) {
             cambiarEstado(id, 'Cancelada');
         }
     }

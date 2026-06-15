@@ -4,7 +4,7 @@ using PlayaAutos.Web.Services;
 
 namespace PlayaAutos.Web.Controllers
 {
-    public class TimbradosController : Controller
+    public class TimbradosController : AdminVendedorController
     {
         private readonly ApiService _api;
 

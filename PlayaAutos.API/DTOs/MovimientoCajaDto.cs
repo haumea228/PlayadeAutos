@@ -41,4 +41,15 @@
         public string Descripcion { get; set; } = string.Empty;
         public string Signo { get; set; } = string.Empty;
     }
+    public class CierreCajaDto
+    {
+        public int CierreId { get; set; }
+        public DateTime FechaCierre { get; set; }
+        public string Usuario { get; set; } = string.Empty;
+        public long TotalIngresos { get; set; }
+        public long TotalEgresos { get; set; }
+        public long SaldoNeto { get; set; }
+        public int CantidadMovimientos { get; set; }
+        public string? Observacion { get; set; }
+    }
 }

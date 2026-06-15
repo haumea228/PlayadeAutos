@@ -6,7 +6,7 @@ using System.Text.Json;
 
 namespace PlayaAutos.Web.Controllers
 {
-    public class CitasController : Controller
+    public class CitasController : AdminVendedorController
     {
         private readonly ApiService _api;
 
@@ -30,9 +30,15 @@ namespace PlayaAutos.Web.Controllers
         {
             if (!EstaAutenticado()) return RedirectToAction("Login", "Auth");
 
+            // Próxima hora entera a partir de ahora (mínimo 1 hora en el futuro)
+            var ahora = DateTime.Now;
+            var proximaHora = ahora.AddHours(1);
+            var defaultFecha = new DateTime(proximaHora.Year, proximaHora.Month, proximaHora.Day,
+                                            proximaHora.Hour, 0, 0);
+
             var vm = new CitaViewModel
             {
-                FechaHora = DateTime.Today.AddHours(10),
+                FechaHora = defaultFecha,
                 TipoCita = "Visita"
             };
             await CargarDropdowns(vm);
@@ -46,9 +52,12 @@ namespace PlayaAutos.Web.Controllers
         {
             if (!EstaAutenticado()) return RedirectToAction("Login", "Auth");
 
-            // Validar que la fecha no sea en el pasado
-            if (vm.FechaHora < DateTime.Now)
+            if (vm.FechaHora < DateTime.Now.AddMinutes(-15))
                 ModelState.AddModelError("FechaHora", "La fecha y hora no puede ser en el pasado.");
+
+            // EstadoCitaId no viene del form — siempre es 1 (Pendiente)
+            ModelState.Remove(nameof(vm.EstadoCitaId));
+            vm.EstadoCitaId = 1;
 
             if (!ModelState.IsValid)
             {
@@ -61,7 +70,7 @@ namespace PlayaAutos.Web.Controllers
                 vm.ClienteId,
                 vm.VehiculoId,
                 vm.VendedorId,
-                vm.EstadoCitaId,
+                EstadoCitaId = 1,
                 vm.FechaHora,
                 vm.TipoCita,
                 vm.Observaciones
@@ -97,9 +106,10 @@ namespace PlayaAutos.Web.Controllers
                 FechaHora = DateTime.TryParse(Get(dto, "fechaHora"), out var fh) ? fh : DateTime.Now,
                 TipoCita = Get(dto, "tipoCita"),
                 Observaciones = Get(dto, "observaciones"),
-                NombreCliente = Get(dto, "nombreCliente"),
-                VehiculoInfo = Get(dto, "vehiculoInfo"),
-                EstadoDescripcion = Get(dto, "estadoDescripcion"),
+                NombreCliente = Get(dto, "cliente"),
+                VehiculoInfo = Get(dto, "vehiculo"),
+                VendedorNombre = Get(dto, "vendedor"),
+                EstadoDescripcion = Get(dto, "estado"),
                 EstadoColor = Get(dto, "estadoColor")
             };
 
@@ -115,7 +125,7 @@ namespace PlayaAutos.Web.Controllers
             if (!EstaAutenticado()) return RedirectToAction("Login", "Auth");
 
             if (vm.FechaHora < DateTime.Now.AddHours(-1))
-                ModelState.AddModelError("FechaHora", "La fecha y hora no puede ser muy antigua.");
+                ModelState.AddModelError("FechaHora", "La fecha no puede ser muy antigua.");
 
             if (!ModelState.IsValid)
             {
@@ -128,7 +138,6 @@ namespace PlayaAutos.Web.Controllers
                 vm.ClienteId,
                 vm.VehiculoId,
                 vm.VendedorId,
-                vm.EstadoCitaId,
                 vm.FechaHora,
                 vm.TipoCita,
                 vm.Observaciones
@@ -146,13 +155,14 @@ namespace PlayaAutos.Web.Controllers
         }
 
         // ── POST /Citas/CambiarEstado ───────────────────────────────────
+        // ✅ CORREGIDO: [HttpPost] y [ValidateAntiForgeryToken] explícitos
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CambiarEstado(int id, int estadoCitaId)
         {
             if (!EstaAutenticado()) return RedirectToAction("Login", "Auth");
 
-            var resp = await _api.PutAsync($"api/Citas/{id}/Estado", new { estadoCitaId });
+            var resp = await _api.PutAsync($"api/Citas/{id}/estado", new { estadoCitaId });
 
             TempData[resp.IsSuccessStatusCode ? "Exito" : "Error"] = resp.IsSuccessStatusCode
                 ? "Estado de la cita actualizado."
@@ -162,13 +172,11 @@ namespace PlayaAutos.Web.Controllers
         }
 
         // ── Helpers ──────────────────────────────────────────────────────
-
         private bool EstaAutenticado() =>
             HttpContext.Session.GetString("Token") != null;
 
         private async Task CargarDropdowns(CitaViewModel vm)
         {
-            // Clientes activos
             var clientes = await _api.GetAsync<List<JsonElement>>("api/Clientes") ?? new();
             vm.Clientes = clientes
                 .Where(c => c.TryGetProperty("activo", out var a) && a.GetBoolean())
@@ -177,7 +185,6 @@ namespace PlayaAutos.Web.Controllers
                     Get(c, "clienteId")))
                 .ToList();
 
-            // Vehículos disponibles
             var vehiculos = await _api.GetAsync<List<JsonElement>>("api/Vehiculos") ?? new();
             vm.Vehiculos = vehiculos
                 .Where(v =>
@@ -194,21 +201,16 @@ namespace PlayaAutos.Web.Controllers
                     Get(v, "vehiculoId")))
                 .ToList();
 
-            // Vendedores
             var usuarios = await _api.GetAsync<List<JsonElement>>("api/Usuarios") ?? new();
             vm.Vendedores = usuarios
-                .Where(u => Get(u, "rol").Contains("Vendedor") || Get(u, "rol").Contains("Administrador"))
+                .Where(u =>
+                {
+                    var rol = Get(u, "rol");
+                    return rol.Contains("Vendedor") || rol.Contains("Administrador");
+                })
                 .Select(u => new SelectListItem(
                     Get(u, "usuarioNombre"),
                     Get(u, "usuarioId")))
-                .ToList();
-
-            // Estados de cita
-            var estados = await _api.GetAsync<List<JsonElement>>("api/Catalogos/estados-cita") ?? new();
-            vm.EstadosCita = estados
-                .Select(e => new SelectListItem(
-                    Get(e, "descripcion"),
-                    Get(e, "estadoCitaId")))
                 .ToList();
         }
 

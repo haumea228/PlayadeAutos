@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using PlayaAutos.Web.Helpers;
 using PlayaAutos.Web.Models;
 using PlayaAutos.Web.Services;
 using System.Text.Json;
 
 namespace PlayaAutos.Web.Controllers
 {
-    public class VehiculosController : Controller
+    public class VehiculosController : AdminVendedorController
     {
         private readonly ApiService _api;
         private readonly IWebHostEnvironment _env;
@@ -30,6 +31,53 @@ namespace PlayaAutos.Web.Controllers
             return View(vehiculos);
         }
 
+        // ── GET /Vehiculos/ExportarExcel ─────────────────────────────────
+        [HttpGet]
+        [Route("/Vehiculos/ExportarExcel")]
+        public async Task<IActionResult> ExportarExcel(string? busqueda, string? estado)
+        {
+            if (!EstaAutenticado()) return RedirectToAction("Login", "Auth");
+
+            var vehiculos = await _api.GetAsync<List<VehiculoListItem>>("api/Vehiculos")
+                            ?? new List<VehiculoListItem>();
+
+            // Filtro por búsqueda
+            if (!string.IsNullOrEmpty(busqueda))
+            {
+                var q = busqueda.ToLower();
+                vehiculos = vehiculos.Where(v =>
+                    (v.CodigoInterno?.ToLower().Contains(q) ?? false) ||
+                    (v.Marca?.ToLower().Contains(q) ?? false) ||
+                    (v.Modelo?.ToLower().Contains(q) ?? false)
+                ).ToList();
+            }
+
+            // Filtro por estado
+            if (!string.IsNullOrEmpty(estado))
+            {
+                vehiculos = vehiculos.Where(v =>
+                    v.Estado?.Equals(estado, StringComparison.OrdinalIgnoreCase) == true
+                ).ToList();
+            }
+
+            var datos = vehiculos.Select(v => new Dictionary<string, object>
+            {
+                ["Código"] = v.CodigoInterno ?? "",
+                ["Marca"] = v.Marca ?? "",
+                ["Modelo"] = v.Modelo ?? "",
+                ["Año"] = v.Anio,
+                ["Color"] = v.Color ?? "",
+                ["Kilometraje"] = v.Kilometraje?.ToString("N0") ?? "0",
+                ["Estado"] = v.Estado ?? "",
+                ["Condición"] = v.Condicion ?? "",
+                ["Precio Venta"] = v.PrecioVenta
+            }).ToList();
+
+            var bytes = ExcelHelper.GenerarExcelDesdeDiccionario(datos, "Vehículos");
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"Stock_Vehiculos_{DateTime.Now:yyyyMMdd}.xlsx");
+        }
+
         // ── GET /Vehiculos/Crear ─────────────────────────────────────────
         public async Task<IActionResult> Crear()
         {
@@ -47,7 +95,6 @@ namespace PlayaAutos.Web.Controllers
         {
             if (!EstaAutenticado()) return RedirectToAction("Login", "Auth");
 
-            // Validar imágenes antes del ModelState
             if (vm.Fotos != null)
             {
                 foreach (var foto in vm.Fotos.Where(f => f.Length > 0))
@@ -67,7 +114,6 @@ namespace PlayaAutos.Web.Controllers
                 return View(vm);
             }
 
-            // 1. Crear el vehículo en la API
             var response = await _api.PostAsync("api/Vehiculos", new
             {
                 vm.CodigoInterno,
@@ -94,7 +140,6 @@ namespace PlayaAutos.Web.Controllers
                 return View(vm);
             }
 
-            // 2. Obtener el ID del nuevo vehículo del header Location
             var location = response.Headers.Location?.ToString() ?? "";
             if (!int.TryParse(location.Split('/').LastOrDefault(), out int vehiculoId) || vehiculoId == 0)
             {
@@ -102,7 +147,6 @@ namespace PlayaAutos.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // 3. Guardar imágenes
             if (vm.Fotos != null && vm.Fotos.Any(f => f.Length > 0))
             {
                 var uploadsPath = Path.Combine(_env.WebRootPath, "uploads", "vehiculos");
@@ -159,7 +203,6 @@ namespace PlayaAutos.Web.Controllers
                 Descripcion = Get(dto, "descripcion"),
             };
 
-            // Fotos existentes
             if (dto.TryGetProperty("fotos", out var fotosEl) && fotosEl.ValueKind == JsonValueKind.Array)
             {
                 vm.FotosExistentes = fotosEl.EnumerateArray().Select(f => new FotoExistenteItem
@@ -182,7 +225,6 @@ namespace PlayaAutos.Web.Controllers
         {
             if (!EstaAutenticado()) return RedirectToAction("Login", "Auth");
 
-            // Validar nuevas imágenes
             if (vm.Fotos != null)
             {
                 foreach (var foto in vm.Fotos.Where(f => f.Length > 0))
@@ -202,7 +244,6 @@ namespace PlayaAutos.Web.Controllers
                 return View(vm);
             }
 
-            // 1. Actualizar datos del vehículo
             var resp = await _api.PutAsync($"api/Vehiculos/{id}", new
             {
                 vm.CodigoInterno,
@@ -230,7 +271,6 @@ namespace PlayaAutos.Web.Controllers
                 return View(vm);
             }
 
-            // 2. Eliminar fotos marcadas
             if (!string.IsNullOrWhiteSpace(vm.FotoIdsEliminar ?? ""))
             {
                 var uploadsPath = Path.Combine(_env.WebRootPath, "uploads", "vehiculos");
@@ -251,13 +291,11 @@ namespace PlayaAutos.Web.Controllers
                 }
             }
 
-            // 3. Subir nuevas fotos
             if (vm.Fotos != null && vm.Fotos.Any(f => f.Length > 0))
             {
                 var uploadsPath = Path.Combine(_env.WebRootPath, "uploads", "vehiculos");
                 Directory.CreateDirectory(uploadsPath);
 
-                // Calcular el próximo orden
                 var fotosActuales = await _api.GetAsync<JsonElement>($"api/Vehiculos/{id}");
                 int orden = 1;
                 if (fotosActuales.TryGetProperty("fotos", out var fa) && fa.ValueKind == JsonValueKind.Array)
@@ -312,8 +350,6 @@ namespace PlayaAutos.Web.Controllers
 
         private async Task CargarDropdowns(VehiculoViewModel vm)
         {
-            var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-
             var marcas = await _api.GetAsync<List<JsonElement>>("api/Marcas") ?? new();
             var modelos = await _api.GetAsync<List<JsonElement>>("api/Modelos") ?? new();
             var tipos = await _api.GetAsync<List<JsonElement>>("api/Catalogos/tipos-vehiculo") ?? new();
@@ -327,12 +363,10 @@ namespace PlayaAutos.Web.Controllers
             vm.Estados = estados.Select(e => new SelectListItem(Get(e, "descripcion"), Get(e, "estadoId"))).ToList();
             vm.Origenes = origenes.Select(o => new SelectListItem(Get(o, "descripcion"), Get(o, "origenId"))).ToList();
 
-            // Modelos — guardamos el marcaId como parte del texto con separador para usarlo en JS
             vm.Modelos = modelos.Select(m => new SelectListItem
             {
                 Text = Get(m, "nombre"),
                 Value = Get(m, "modeloId"),
-                Disabled = false,           // reusamos Disabled como carrier del marcaId
                 Group = new SelectListGroup { Name = Get(m, "marcaId") }
             }).ToList();
         }
@@ -343,7 +377,6 @@ namespace PlayaAutos.Web.Controllers
                 return val.ValueKind == JsonValueKind.Number
                     ? val.GetRawText()
                     : val.GetString() ?? "";
-            // Try camelCase fallback
             var lower = char.ToLower(prop[0]) + prop[1..];
             if (el.TryGetProperty(lower, out var val2))
                 return val2.ValueKind == JsonValueKind.Number

@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace PlayaAutos.Web.Controllers
 {
-    public class UsuariosController : Controller
+    public class UsuariosController : AdminVendedorController
     {
         private readonly ApiService _api;
 

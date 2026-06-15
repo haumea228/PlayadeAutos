@@ -38,9 +38,9 @@ app.MapControllerRoute(
     name: "mvc",
     pattern: "{controller}/{action=Index}/{id?}");
 
-// Ruta raíz: / → Auth/Login
+// Ruta raíz: / → Catalogo/Index
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Auth}/{action=Login}/{id?}");
+    pattern: "{controller=Catalogo}/{action=Index}/{id?}");
 
 app.Run();

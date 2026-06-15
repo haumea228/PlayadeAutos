@@ -16,8 +16,14 @@ namespace PlayaAutos.Web.Controllers
         [HttpGet]
         public IActionResult Login()
         {
-            if (HttpContext.Session.GetString("Token") != null)
-                return RedirectToAction("Index", "Dashboard");
+            var token = HttpContext.Session.GetString("Token");
+            if (token != null)
+            {
+                var rol = HttpContext.Session.GetString("Rol");
+                return rol == "Cliente"
+                    ? RedirectToAction("IndexCliente", "Catalogo")
+                    : RedirectToAction("Index", "Dashboard");
+            }
             return View();
         }
 
@@ -50,13 +56,47 @@ namespace PlayaAutos.Web.Controllers
             HttpContext.Session.SetString("Rol", result.Rol);
             HttpContext.Session.SetInt32("UsuarioId", result.UsuarioId);
 
-            return RedirectToAction("Index", "Dashboard");
+            return result.Rol == "Cliente"
+                ? RedirectToAction("IndexCliente", "Catalogo")
+                : RedirectToAction("Index", "Dashboard");
+        }
+
+        [HttpGet]
+        public IActionResult Registro()
+        {
+            if (HttpContext.Session.GetString("Token") != null)
+                return RedirectToAction("Index", "Dashboard");
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Registro(RegistroClienteViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var response = await _apiService.PostAsync("api/Auth/registro-cliente", new
+            {
+                nombre = model.Nombre,
+                email = model.Email,
+                password = model.Password,
+                telefono = model.Telefono
+            });
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                ModelState.AddModelError("", error.Trim('"'));
+                return View(model);
+            }
+
+            TempData["RegistroExitoso"] = "¡Cuenta creada exitosamente! Ya podés iniciar sesión.";
+            return RedirectToAction("Login");
         }
 
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();
-            return RedirectToAction("Login");
+            return RedirectToAction("Index", "Catalogo");
         }
     }
 }

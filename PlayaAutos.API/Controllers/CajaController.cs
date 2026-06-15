@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using PlayaAutos.API.Data;
 using PlayaAutos.API.DTOs;
 using PlayaAutos.API.Models;
+using System.Security.Claims;
 
 namespace PlayaAutos.API.Controllers
 {
@@ -24,7 +25,9 @@ namespace PlayaAutos.API.Controllers
         public async Task<ActionResult<IEnumerable<MovimientoCajaDto>>> GetMovimientos(
             [FromQuery] DateTime? desde,
             [FromQuery] DateTime? hasta,
-            [FromQuery] int? tipoId)
+            [FromQuery] int? tipoId,
+            [FromQuery] bool? soloAbiertos,
+            [FromQuery] string? signo)
         {
             var query = _context.MovimientosCaja
                 .Include(m => m.TipoMovimiento)
@@ -34,6 +37,9 @@ namespace PlayaAutos.API.Controllers
                     .ThenInclude(v => v.Modelo).ThenInclude(mo => mo.Marca)
                 .AsQueryable();
 
+            if (soloAbiertos == true)
+                query = query.Where(m => m.CierreId == null);
+
             if (desde.HasValue)
                 query = query.Where(m => m.Fecha >= desde.Value);
 
@@ -42,6 +48,15 @@ namespace PlayaAutos.API.Controllers
 
             if (tipoId.HasValue)
                 query = query.Where(m => m.TipoMovimientoId == tipoId.Value);
+
+            //Filtro por signo: "+" = todos los ingresos, "-" = todos los egresos
+            if (!string.IsNullOrEmpty(signo))
+            {
+                if (signo == "Ingreso")
+                    query = query.Where(m => m.TipoMovimiento!.Signo == "+");
+                else if (signo == "Egreso")
+                    query = query.Where(m => m.TipoMovimiento!.Signo == "-");
+            }
 
             var movimientos = await query
                 .OrderByDescending(m => m.Fecha)
@@ -135,7 +150,7 @@ namespace PlayaAutos.API.Controllers
         {
             var query = _context.MovimientosCaja
                 .Include(m => m.TipoMovimiento)
-                .Where(m => m.TipoMovimiento.AfectaCaja)
+                .Where(m => m.CierreId == null && m.TipoMovimiento!.AfectaCaja)
                 .AsQueryable();
 
             if (desde.HasValue)
@@ -177,6 +192,111 @@ namespace PlayaAutos.API.Controllers
                 .ToListAsync();
 
             return Ok(tipos);
+        }
+
+        // POST: api/caja/cerrar
+        [HttpPost("cerrar")]
+        [Authorize(Roles = "AdministradorP")]
+        public async Task<IActionResult> CerrarCaja()
+        {
+            var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var abiertos = await _context.MovimientosCaja
+                .Include(m => m.TipoMovimiento)
+                .Where(m => m.CierreId == null)
+                .ToListAsync();
+
+            if (!abiertos.Any())
+                return BadRequest("No hay movimientos para cerrar.");
+
+            var ingresos = abiertos
+                .Where(m => m.TipoMovimiento!.Signo == "+" || m.TipoMovimiento!.Descripcion == "+")
+                .Sum(m => m.Monto);
+            var egresos = abiertos
+                .Where(m => m.TipoMovimiento!.Signo == "-" || m.TipoMovimiento!.Descripcion == "-")
+                .Sum(m => m.Monto);
+
+            var cierre = new CierreCaja
+            {
+                FechaCierre = DateTime.Now,
+                UsuarioCierre = usuarioId,
+                TotalIngresos = ingresos,
+                TotalEgresos = egresos,
+                SaldoNeto = ingresos - egresos,
+                CantidadMovimientos = abiertos.Count,
+                Observacion = null
+            };
+            _context.CierresCaja.Add(cierre);
+            await _context.SaveChangesAsync();
+
+            foreach (var m in abiertos)
+                m.CierreId = cierre.CierreId;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new CierreCajaDto
+            {
+                CierreId = cierre.CierreId,
+                FechaCierre = cierre.FechaCierre,
+                TotalIngresos = cierre.TotalIngresos,
+                TotalEgresos = cierre.TotalEgresos,
+                SaldoNeto = cierre.SaldoNeto,
+                CantidadMovimientos = cierre.CantidadMovimientos
+            });
+        }
+
+        // GET: api/caja/cierres
+        [HttpGet("cierres")]
+        public async Task<ActionResult<IEnumerable<CierreCajaDto>>> GetCierres()
+        {
+            return await _context.CierresCaja
+                .Include(c => c.Usuario)
+                .OrderByDescending(c => c.FechaCierre)
+                .Select(c => new CierreCajaDto
+                {
+                    CierreId = c.CierreId,
+                    FechaCierre = c.FechaCierre,
+                    Usuario = c.Usuario.UsuarioNombre,
+                    TotalIngresos = c.TotalIngresos,
+                    TotalEgresos = c.TotalEgresos,
+                    SaldoNeto = c.SaldoNeto,
+                    CantidadMovimientos = c.CantidadMovimientos,
+                    Observacion = c.Observacion
+                })
+                .ToListAsync();
+        }
+
+        // GET: api/caja/cierres/{id}/movimientos
+        [HttpGet("cierres/{id}/movimientos")]
+        public async Task<ActionResult> GetMovimientosPorCierre(int id)
+        {
+            return Ok(await _context.MovimientosCaja
+                .Include(m => m.TipoMovimiento)
+                .Include(m => m.Venta).ThenInclude(v => v.Cliente)
+                .Include(m => m.Cuota)
+                .Include(m => m.GastoVehiculo).ThenInclude(g => g.Vehiculo)
+                    .ThenInclude(v => v.Modelo).ThenInclude(mo => mo.Marca)
+                .Where(m => m.CierreId == id)
+                .Select(m => new MovimientoCajaDto
+                {
+                    MovimientoId = m.MovimientoId,
+                    Fecha = m.Fecha,
+                    TipoMovimiento = m.TipoMovimiento!.Descripcion,
+                    Signo = m.TipoMovimiento!.Signo,
+                    Descripcion = m.Descripcion,
+                    Monto = m.Monto,
+                    Referencia = m.Venta != null
+                        ? $"Venta #{m.VentaId} - {m.Venta.Cliente.Nombre}"
+                        : m.Cuota != null
+                            ? $"Cuota #{m.Cuota.NumeroCuota} - Venta #{m.Cuota.VentaId}"
+                            : m.GastoVehiculo != null
+                                ? $"Gasto #{m.GastoId} - {m.GastoVehiculo.Vehiculo.CodigoInterno}"
+                                : null,
+                    Comentarios = m.Comentarios,
+                    Usuario = ""
+                })
+                .OrderBy(m => m.Fecha)
+                .ToListAsync());
         }
     }
 }

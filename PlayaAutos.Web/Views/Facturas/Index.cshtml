@@ -101,17 +101,14 @@
                                     </td>
                                     <td>
                                         <div class="d-flex gap-2">
-                                            <a href="/Facturas/Detalle/@f.FacturaId" 
+                                            <a href="/Facturas/Detalle/@f.FacturaId"
                                                class="action-btn edit" title="Ver detalle">
                                                 <i class="fa-solid fa-eye"></i>
                                             </a>
-                                            @if (!string.IsNullOrEmpty(f.RutaPDF))
-                                            {
-                                                <a href="/Facturas/DescargarPDF/@f.FacturaId" 
-                                                   class="action-btn pdf" title="Descargar PDF" target="_blank">
-                                                    <i class="fa-solid fa-file-pdf"></i>
-                                                </a>
-                                            }
+                                            <a href="/Facturas/DescargarPDF/@f.FacturaId"
+                                               class="action-btn pdf" title="Descargar PDF">
+                                                <i class="fa-solid fa-file-pdf"></i>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PlayaAutos.API.Data;
@@ -28,7 +28,7 @@ namespace PlayaAutos.API.Controllers
                 .Include(v => v.Vehiculo).ThenInclude(ve => ve.Modelo).ThenInclude(m => m.Marca)
                 .Include(v => v.Vendedor)
                 .Include(v => v.TipoVenta)
-                .Include(v => v.FormaPago)
+                .Include(v => v.PagosVenta).ThenInclude(p => p.FormaPago)
                 .Select(v => new VentaDto
                 {
                     VentaId = v.VentaId,
@@ -36,10 +36,19 @@ namespace PlayaAutos.API.Controllers
                     Vehiculo = v.Vehiculo.Modelo.Marca.Nombre + " " + v.Vehiculo.Modelo.Nombre,
                     Vendedor = v.Vendedor.UsuarioNombre,
                     TipoVenta = v.TipoVenta.Descripcion,
-                    FormaPago = v.FormaPago.Descripcion,
+                    FormasPago = string.Join(", ", v.PagosVenta.Select(p => p.FormaPago.Descripcion)),
                     FechaVenta = v.FechaVenta,
                     MontoTotal = v.MontoTotal,
-                    Estado = v.Estado
+                    Estado = v.Estado,
+                    Pagos = v.PagosVenta.Select(p => new PagoVentaDto
+                    {
+                        PagoVentaId = p.PagoVentaId,
+                        FormaPago = p.FormaPago.Descripcion,
+                        Monto = p.Monto,
+                        ComprobanteImagen = p.ComprobanteImagen,
+                        Observacion = p.Observacion,
+                        TasacionVehiculoId = p.TasacionVehiculoId
+                    }).ToList()
                 })
                 .ToListAsync();
         }
@@ -53,7 +62,8 @@ namespace PlayaAutos.API.Controllers
                 .Include(v => v.Vehiculo).ThenInclude(ve => ve.Modelo).ThenInclude(m => m.Marca)
                 .Include(v => v.Vendedor)
                 .Include(v => v.TipoVenta)
-                .Include(v => v.FormaPago)
+                .Include(v => v.PagosVenta).ThenInclude(p => p.FormaPago)
+                .Include(v => v.PagosVenta).ThenInclude(p => p.TasacionVehiculo)
                 .FirstOrDefaultAsync(v => v.VentaId == id);
 
             if (v == null) return NotFound();
@@ -65,10 +75,22 @@ namespace PlayaAutos.API.Controllers
                 Vehiculo = v.Vehiculo.Modelo.Marca.Nombre + " " + v.Vehiculo.Modelo.Nombre,
                 Vendedor = v.Vendedor.UsuarioNombre,
                 TipoVenta = v.TipoVenta.Descripcion,
-                FormaPago = v.FormaPago.Descripcion,
+                FormasPago = string.Join(", ", v.PagosVenta.Select(p => p.FormaPago.Descripcion)),
                 FechaVenta = v.FechaVenta,
                 MontoTotal = v.MontoTotal,
-                Estado = v.Estado
+                Estado = v.Estado,
+                Pagos = v.PagosVenta.Select(p => new PagoVentaDto
+                {
+                    PagoVentaId = p.PagoVentaId,
+                    FormaPago = p.FormaPago.Descripcion,
+                    Monto = p.Monto,
+                    ComprobanteImagen = p.ComprobanteImagen,
+                    Observacion = p.Observacion,
+                    TasacionVehiculoId = p.TasacionVehiculoId,
+                    VehiculoTasado = p.TasacionVehiculo != null
+                        ? $"{p.TasacionVehiculo.MarcaVehiculo} {p.TasacionVehiculo.ModeloVehiculo} {p.TasacionVehiculo.AnhoVehiculo}"
+                        : null
+                }).ToList()
             };
         }
 
@@ -76,147 +98,444 @@ namespace PlayaAutos.API.Controllers
         [HttpPost]
         public async Task<IActionResult> PostVenta(CrearVentaDto dto)
         {
-            // ── Validar vehículo ─────────────────────────────────────────
-            var vehiculo = await _context.Vehiculos
-                .Include(v => v.Estado)
-                .FirstOrDefaultAsync(v => v.VehiculoId == dto.VehiculoId);
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            if (vehiculo == null)
-                return BadRequest("El vehículo no existe.");
-
-            if (!vehiculo.Estado.PermiteVenta)
-                return BadRequest($"El vehículo no está disponible para la venta. Estado actual: {vehiculo.Estado.Descripcion}");
-
-            // ── Validar cliente ──────────────────────────────────────────
-            if (!await _context.Clientes.AnyAsync(c => c.ClienteId == dto.ClienteId))
-                return BadRequest("El cliente no existe.");
-
-            // ── Validar timbrado activo ──────────────────────────────────
-            var timbrado = await _context.Timbrados
-                .FirstOrDefaultAsync(t =>
-                    t.Activo &&
-                    t.FechaInicio <= DateTime.Now &&
-                    t.FechaVencimiento >= DateTime.Now &&
-                    t.UltimoNumeroUsado < t.NumeroHasta);
-
-            if (timbrado == null)
-                return BadRequest("No hay timbrado activo disponible. Contacte al administrador.");
-
-            // ── Crear venta ──────────────────────────────────────────────
-            var venta = new Venta
+            try
             {
-                ClienteId = dto.ClienteId,
-                VehiculoId = dto.VehiculoId,
-                VendedorId = dto.VendedorId,
-                TipoVentaId = dto.TipoVentaId,
-                FormaPagoId = dto.FormaPagoId,
-                FechaVenta = dto.FechaVenta,
-                MontoTotal = dto.MontoTotal,
-                MontoEntrada = dto.MontoEntrada,
-                SaldoFinanciado = dto.SaldoFinanciado,
-                TasaInteres = dto.TasaInteres,
-                CantidadCuotas = dto.CantidadCuotas,
-                VehiculoPermutaId = dto.VehiculoPermutaId,
-                ValorPermuta = dto.ValorPermuta,
-                Estado = "Registrada"
-            };
+                // ── Obtener IDs necesarios ──────────────────────────────────────
+                var tipoCredito = await _context.TiposVenta
+                    .FirstOrDefaultAsync(t => t.RequiereFinanciacion);
 
-            _context.Ventas.Add(venta);
+                // ── Validar suma de pagos ────────────────────────────────────
+                if (dto.Pagos.Count == 0)
+                    return BadRequest("Debe especificar al menos un pago.");
 
-            // ── Cambiar estado del vehículo a Vendido ────────────────────
-            var estadoVendido = await _context.EstadosVehiculo
-                .FirstOrDefaultAsync(e => e.Descripcion == "Vendido");
+                var montoEsperado = dto.MontoEntrada ?? dto.MontoTotal;
+                var sumaPagos = dto.Pagos.Sum(p => p.Monto);
+                if (sumaPagos != montoEsperado)
+                    return BadRequest($"La suma de los pagos ({sumaPagos}) no coincide con el monto de entrada ({montoEsperado}).");
 
-            if (estadoVendido != null)
-                vehiculo.EstadoId = estadoVendido.EstadoId;
-
-            // ── Generar cuotas si es crédito ─────────────────────────────
-            if (dto.CantidadCuotas.HasValue && dto.CantidadCuotas > 0 && dto.SaldoFinanciado.HasValue)
-            {
-                var montoCuota = dto.SaldoFinanciado.Value / dto.CantidadCuotas.Value;
-                for (int i = 1; i <= dto.CantidadCuotas.Value; i++)
+                // validacion para que pagos no supere monto entrada
+                foreach (var pago in dto.Pagos)
                 {
-                    _context.Cuotas.Add(new Cuota
+                    if (pago.Monto > montoEsperado)
+                        return BadRequest($"El pago de Gs. {pago.Monto:N0} supera el monto de entrada ({montoEsperado:N0}).");
+                }
+
+                // validacion para que permuta no supere monto total
+                var montoPermuta = dto.Pagos
+                    .Where(p => p.TasacionVehiculoId.HasValue)
+                    .Sum(p => p.Monto);
+
+                if (montoPermuta > dto.MontoTotal)
+                    return BadRequest($"La permuta (Gs. {montoPermuta:N0}) no puede superar el monto total de la venta (Gs. {dto.MontoTotal:N0}).");
+
+                // Validar vehículo si existe y esta disponible y permite venta
+                var vehiculo = await _context.Vehiculos
+                    .Include(v => v.Estado)
+                    .FirstOrDefaultAsync(v => v.VehiculoId == dto.VehiculoId);
+
+                if (vehiculo == null)
+                    return BadRequest("El vehículo no existe.");
+
+                if (!vehiculo.Estado.PermiteVenta)
+                    return BadRequest($"El vehículo no está disponible para la venta. Estado actual: {vehiculo.Estado.Descripcion}");
+
+                // validar que exista el cliente
+                if (!await _context.Clientes.AnyAsync(c => c.ClienteId == dto.ClienteId))
+                    return BadRequest("El cliente no existe.");
+
+                // valida que las tasaciones referenciadas si existan
+                var tasacionIds = dto.Pagos
+                    .Where(p => p.TasacionVehiculoId.HasValue)
+                    .Select(p => p.TasacionVehiculoId!.Value)
+                    .ToList();
+
+                foreach (var tasId in tasacionIds)
+                {
+                    var tas = await _context.TasacionesVehiculo.FindAsync(tasId);
+                    if (tas == null)
+                        return BadRequest($"La tasación {tasId} no existe.");
+                    if (tas.EstadoTasacion != "Aprobada")
+                        return BadRequest($"La tasación {tasId} debe estar en estado Aprobada para usarse como permuta.");
+                }
+
+                // ── Validar timbrado activo ──────────────────────────────────
+                var timbrado = await _context.Timbrados
+                    .FirstOrDefaultAsync(t =>
+                        t.Activo &&
+                        t.FechaInicio <= DateTime.Now &&
+                        t.FechaVencimiento >= DateTime.Now &&
+                        t.UltimoNumeroUsado < t.NumeroHasta);
+
+                if (timbrado == null)
+                    return BadRequest("No hay timbrado activo disponible. Contacte al administrador.");
+
+                // ── Crear venta ──────────────────────────────────────────────
+                var venta = new Venta
+                {
+                    ClienteId = dto.ClienteId,
+                    VehiculoId = dto.VehiculoId,
+                    VendedorId = dto.VendedorId,
+                    TipoVentaId = dto.TipoVentaId,
+                    FechaVenta = dto.FechaVenta,
+                    MontoTotal = dto.MontoTotal,
+                    MontoEntrada = dto.MontoEntrada,
+                    SaldoFinanciado = dto.SaldoFinanciado,
+                    TasaInteres = dto.TasaInteres,
+                    CantidadCuotas = dto.CantidadCuotas,
+                    Estado = "Registrada"
+                };
+
+                _context.Ventas.Add(venta);
+                await _context.SaveChangesAsync();
+
+                // ── Crear pagos ──────────────────────────────────────────────
+                foreach (var pagoDto in dto.Pagos)
+                {
+                    _context.PagosVenta.Add(new PagoVenta
                     {
-                        Venta = venta,
-                        NumeroCuota = i,
-                        Monto = montoCuota,
-                        FechaVencimiento = dto.FechaVenta.AddMonths(i),
-                        Estado = "Pendiente"
+                        VentaId = venta.VentaId,
+                        FormaPagoId = pagoDto.FormaPagoId,
+                        Monto = pagoDto.Monto,
+                        ComprobanteImagen = pagoDto.ComprobanteImagen,
+                        Observacion = pagoDto.Observacion,
+                        TasacionVehiculoId = pagoDto.TasacionVehiculoId
                     });
                 }
-            }
 
-            // ── Registrar movimiento de caja ─────────────────────────────
-            var tipoIngreso = await _context.TiposMovimiento
-                .FirstOrDefaultAsync(t => t.Signo == "+");
+                // ── Crear vehículos desde tasaciones y marcarlas Usadas ──────
+                var estadoDisponible = await _context.EstadosVehiculo
+                    .FirstOrDefaultAsync(e => e.Descripcion == "Disponible");
 
-            if (tipoIngreso != null)
-            {
-                _context.MovimientosCaja.Add(new MovimientoCaja
+                foreach (var tasId in tasacionIds)
                 {
-                    Fecha = DateTime.Now,
-                    TipoMovimientoId = tipoIngreso.TipoMovimientoId,
-                    Descripcion = $"Venta de vehículo - Cliente ID {dto.ClienteId}",
-                    Monto = dto.MontoEntrada ?? dto.MontoTotal,
-                    Venta = venta,
-                    UsuarioRegistro = dto.VendedorId
+                    var tas = await _context.TasacionesVehiculo.FindAsync(tasId);
+                    tas!.EstadoTasacion = "Usada";
+
+                    // 🟢 Si la tasación ya tiene VehiculoId → REACTIVAR vehículo existente (devolución/intercambio)
+                    if (tas.VehiculoId.HasValue)
+                    {
+                        var vehiculoExistente = await _context.Vehiculos.FindAsync(tas.VehiculoId.Value);
+                        if (vehiculoExistente != null && estadoDisponible != null)
+                        {
+                            vehiculoExistente.EstadoId = estadoDisponible.EstadoId;
+                            vehiculoExistente.Kilometraje = (long)tas.KilometrajeVehiculo;
+                            vehiculoExistente.PrecioVenta = tas.PrecioVenta;
+                            vehiculoExistente.Color = tas.ColorVehiculo;
+                        }
+                    }
+                    // 🟢 Si NO tiene VehiculoId → CREAR nuevo vehículo (permuta normal)
+                    else if (tas.ModeloId.HasValue && tas.TipoId.HasValue &&
+                             tas.CondicionId.HasValue && tas.OrigenId.HasValue &&
+                             estadoDisponible != null)
+                    {
+                        var nuevoVehiculo = new Vehiculo
+                        {
+                            CodigoInterno = $"TAV-{tasId}",
+                            ModeloId = tas.ModeloId.Value,
+                            TipoId = tas.TipoId.Value,
+                            CondicionId = tas.CondicionId.Value,
+                            OrigenId = tas.OrigenId.Value,
+                            EstadoId = estadoDisponible.EstadoId,
+                            Anio = tas.AnhoVehiculo,
+                            Color = tas.ColorVehiculo,
+                            Kilometraje = (long)tas.KilometrajeVehiculo,
+                            PrecioVenta = tas.PrecioVenta,
+                            CostoAdquisicion = tas.ValorTasacion,
+                            FechaAlta = DateTime.Now,
+                            UsuarioAlta = dto.VendedorId
+                        };
+                        _context.Vehiculos.Add(nuevoVehiculo);
+                        await _context.SaveChangesAsync();
+                        tas.VehiculoId = nuevoVehiculo.VehiculoId;
+                    }
+                }
+
+                // ── Cambiar estado del vehículo a Vendido ────────────────────
+                var estadoVendido = await _context.EstadosVehiculo
+                    .FirstOrDefaultAsync(e => e.Descripcion == "Vendido");
+
+                if (estadoVendido != null)
+                    vehiculo.EstadoId = estadoVendido.EstadoId;
+
+                // liquidaciones de consigna
+                if (vehiculo.ConsignanteId.HasValue)
+                {
+                    var contrato = await _context.ContratosConsigna
+                        .FirstOrDefaultAsync(c => c.VehiculoId == vehiculo.VehiculoId && c.Estado == "Vigente");
+
+                    if (contrato != null)
+                    {
+                        var precioCliente = vehiculo.CostoAdquisicion ?? 0;
+                        var precioVenta = dto.MontoTotal;
+                        var comision = (long)(precioCliente * (contrato.PorcentajeComision / 100m));
+                        var pagoAlCliente = precioCliente - comision;
+                        var gananciaPlaya = precioVenta - pagoAlCliente;
+
+                        // 1. Finalizar contrato
+                        contrato.Estado = "Vendido";
+
+                        // 2. Egreso: pago al dueño
+                        var tipoEgreso = await _context.TiposMovimiento
+                            .FirstOrDefaultAsync(t => t.Signo == "-");
+
+                        if (tipoEgreso != null && precioCliente > 0)
+                        {
+                            _context.MovimientosCaja.Add(new MovimientoCaja
+                            {
+                                Fecha = DateTime.Now,
+                                TipoMovimientoId = tipoEgreso.TipoMovimientoId,
+                                Descripcion = $"Pago consignante - Venta #{venta.VentaId} - {vehiculo.Modelo?.Marca?.Nombre} {vehiculo.Modelo?.Nombre}",
+                                Monto = pagoAlCliente,
+                                VentaId = venta.VentaId,
+                                UsuarioRegistro = dto.VendedorId,
+                                Comentarios = $"Consignante: {contrato.ConsignanteId} | " +
+                                              $"Precio venta: Gs. {precioVenta:N0} | " +
+                                              $"Precio cliente: Gs. {precioCliente:N0} | " +
+                                              $"Comisión ({contrato.PorcentajeComision}%): Gs. {comision:N0} | " +
+                                              $"Dueño recibe: Gs. {pagoAlCliente:N0} | " +
+                                              $"Ganancia playa: Gs. {gananciaPlaya:N0}"
+                            });
+                        }
+
+                        // 3. Limpiar datos de consigna del vehículo
+                        vehiculo.ConsignanteId = null;
+                        vehiculo.PorcentajeComision = null;
+                        vehiculo.FechaConsigna = null;
+                    }
+                }
+
+                // ── Generar cuotas si es crédito ─────────────────────────────
+                if (dto.CantidadCuotas.HasValue && dto.CantidadCuotas > 0 && dto.SaldoFinanciado.HasValue)
+                {
+                    var montoCuota = dto.SaldoFinanciado.Value / dto.CantidadCuotas.Value;
+                    for (int i = 1; i <= dto.CantidadCuotas.Value; i++)
+                    {
+                        _context.Cuotas.Add(new Cuota
+                        {
+                            VentaId = venta.VentaId,
+                            NumeroCuota = i,
+                            Monto = montoCuota,
+                            FechaVencimiento = dto.FechaVenta.AddMonths(i),
+                            Estado = "Pendiente"
+                        });
+                    }
+                }
+
+                // ──  Registrar movimiento de caja (INGRESO) ─────────────────
+                // busca por signo = +
+                var tipoIngreso = await _context.TiposMovimiento
+                    .FirstOrDefaultAsync(t => t.Signo == "+");
+
+                if (tipoIngreso != null)
+                {
+                    // Determinar cuánto entra realmente en caja AHORA
+                    long montoRealCaja;
+                    string descripcionCaja;
+
+                    bool esCredito = tipoCredito != null && dto.TipoVentaId == tipoCredito.TipoVentaId;
+
+                    if (esCredito)
+                    {
+                        montoRealCaja = dto.MontoEntrada ?? 0;
+                        descripcionCaja = $"Venta #{venta.VentaId} - Entrada crédito";
+                    }
+                    else
+                    {
+                        montoRealCaja = dto.MontoTotal;
+                        descripcionCaja = $"Venta #{venta.VentaId} - Contado";
+                    }
+
+                    // Restar valor de permuta (no es efectivo)
+                    montoPermuta = dto.Pagos
+                        .Where(p => p.TasacionVehiculoId.HasValue)
+                        .Sum(p => p.Monto);
+                    montoRealCaja -= montoPermuta;
+
+                    // Solo registrar si realmente entra dinero
+
+                    // bloque para la referencia de permuta en ventas
+                    string? comentarioCaja = null;
+                    if (montoPermuta > 0)
+                    {
+                        var tasacionesIds = dto.Pagos
+                            .Where(p => p.TasacionVehiculoId.HasValue)
+                            .Select(p => $"Tasación #{p.TasacionVehiculoId}");
+
+                        comentarioCaja = $"Total venta: Gs. {dto.MontoTotal:N0} | " +
+                                         $"Permuta: Gs. {montoPermuta:N0} ({string.Join(", ", tasacionesIds)}) | " +
+                                         $"Efectivo: Gs. {montoRealCaja:N0}";
+                    }
+
+                    if (montoRealCaja > 0)
+                    {
+                        _context.MovimientosCaja.Add(new MovimientoCaja
+                        {
+                            Fecha = DateTime.Now,
+                            TipoMovimientoId = tipoIngreso.TipoMovimientoId,
+                            Descripcion = descripcionCaja,
+                            Monto = montoRealCaja,
+                            VentaId = venta.VentaId,
+                            UsuarioRegistro = dto.VendedorId,
+                            Comentarios = comentarioCaja
+                        });
+                    }
+                }
+
+                // ── Generar factura automáticamente ─────────────────────────
+                timbrado.UltimoNumeroUsado++;
+                var numeroFactura = $"{timbrado.NumeroTimbrado}-{timbrado.UltimoNumeroUsado:D8}";
+
+                var subtotal = (long)Math.Round(dto.MontoTotal / 1.10m);
+                var iva = dto.MontoTotal - subtotal;
+
+                _context.Facturas.Add(new Factura
+                {
+                    VentaId = venta.VentaId,
+                    TimbradoId = timbrado.TimbradoId,
+                    NumeroFactura = numeroFactura,
+                    FechaEmision = dto.FechaVenta,
+                    Subtotal = subtotal,
+                    IVA = iva,
+                    Total = dto.MontoTotal,
+                    FechaGeneracion = DateTime.Now,
+                    UsuarioGeneracion = dto.VendedorId
                 });
+
+                // ── Generar nota de crédito por cada permuta ─────────────────
+                foreach (var pagoDto in dto.Pagos.Where(p => p.TasacionVehiculoId.HasValue))
+                {
+                    var tasPerm = await _context.TasacionesVehiculo.FindAsync(pagoDto.TasacionVehiculoId!.Value);
+                    if (tasPerm == null) continue;
+
+                    timbrado.UltimoNumeroUsado++;
+                    var numeroNota = $"NC-{timbrado.NumeroTimbrado}-{timbrado.UltimoNumeroUsado:D8}";
+
+                    _context.NotasCredito.Add(new NotaCredito
+                    {
+                        VentaId = venta.VentaId,
+                        TimbradoId = timbrado.TimbradoId,
+                        NumeroNota = numeroNota,
+                        FechaEmision = dto.FechaVenta,
+                        Motivo = $"Permuta - {tasPerm.MarcaVehiculo} {tasPerm.ModeloVehiculo} ({tasPerm.AnhoVehiculo})",
+                        Monto = pagoDto.Monto,
+                        VehiculoId = dto.VehiculoId,
+                        TasacionVehiculoId = pagoDto.TasacionVehiculoId,
+                        FechaGeneracion = DateTime.Now,
+                        UsuarioGeneracion = dto.VendedorId
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return CreatedAtAction(nameof(GetVenta), new { id = venta.VentaId },
+                    new { venta.VentaId, NumeroFactura = numeroFactura });
             }
-
-            // ── Generar factura automáticamente ─────────────────────────
-            // IVA incluido al 10% (estándar Paraguay):
-            // Subtotal = Total / 1.10  →  IVA = Total - Subtotal
-            timbrado.UltimoNumeroUsado++;
-            var numeroFactura = $"{timbrado.NumeroTimbrado}-{timbrado.UltimoNumeroUsado:D8}";
-
-            var subtotal = (long)Math.Round(dto.MontoTotal / 1.10m);
-            var iva = dto.MontoTotal - subtotal;
-
-            _context.Facturas.Add(new Factura
+            catch (Exception ex)
             {
-                Venta = venta,
-                TimbradoId = timbrado.TimbradoId,
-                NumeroFactura = numeroFactura,
-                FechaEmision = dto.FechaVenta,
-                Subtotal = subtotal,
-                IVA = iva,
-                Total = dto.MontoTotal,
-                FechaGeneracion = DateTime.Now,
-                UsuarioGeneracion = dto.VendedorId
-            });
-
-            // ── Persistir todo en una sola transacción ───────────────────
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetVenta), new { id = venta.VentaId },
-                new { venta.VentaId, NumeroFactura = numeroFactura });
+                await transaction.RollbackAsync();
+                return StatusCode(500, $"Error al procesar la venta: {ex.Message}");
+            }
         }
 
         // PUT: api/ventas/5/anular
         [HttpPut("{id}/anular")]
         public async Task<IActionResult> AnularVenta(int id, [FromBody] string motivo)
         {
-            var venta = await _context.Ventas
-                .Include(v => v.Vehiculo)
-                .FirstOrDefaultAsync(v => v.VentaId == id);
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            if (venta == null) return NotFound();
-            if (venta.Estado == "Anulada") return BadRequest("La venta ya está anulada.");
+            try
+            {
+                var venta = await _context.Ventas
+                    .Include(v => v.Vehiculo)
+                    .Include(v => v.MovimientosCaja)
+                    .Include(v => v.PagosVenta)
+                    .FirstOrDefaultAsync(v => v.VentaId == id);
 
-            venta.Estado = "Anulada";
-            venta.FechaAnulacion = DateTime.Now;
-            venta.MotivoAnulacion = motivo;
+                if (venta == null) return NotFound();
+                if (venta.Estado == "Anulada") return BadRequest("La venta ya está anulada.");
 
-            // Revertir estado del vehículo a Disponible
-            var estadoDisponible = await _context.EstadosVehiculo
-                .FirstOrDefaultAsync(e => e.Descripcion == "Disponible");
+                // ── Calcular cuánto dinero entró realmente en caja ──────────────
+                var tipoCredito = await _context.TiposVenta
+                    .FirstOrDefaultAsync(t => t.RequiereFinanciacion);
 
-            if (estadoDisponible != null)
-                venta.Vehiculo.EstadoId = estadoDisponible.EstadoId;
+                bool esCredito = tipoCredito != null && venta.TipoVentaId == tipoCredito.TipoVentaId;
 
-            await _context.SaveChangesAsync();
-            return NoContent();
+                // Monto que ingresó en caja al momento de la venta
+                long montoIngresado;
+                if (esCredito)
+                {
+                    montoIngresado = venta.MontoEntrada ?? 0;
+                }
+                else
+                {
+                    montoIngresado = venta.MontoTotal;
+                }
+
+                // Restar el valor de las permutas (nunca entró ese dinero)
+                var montoPermuta = venta.PagosVenta
+                    .Where(p => p.TasacionVehiculoId != null)
+                    .Sum(p => p.Monto);
+
+                montoIngresado -= montoPermuta;
+
+                // ──  Crear EGRESO por anulación (cambia signo) ────
+                // busca por signo -
+                if (montoIngresado > 0)
+                {
+                    var tipoEgreso = await _context.TiposMovimiento
+                        .FirstOrDefaultAsync(t => t.Signo == "-");
+
+                    if (tipoEgreso == null)
+                    {
+                        return BadRequest("No se encontró el tipo de movimiento 'Egreso' en la base de datos.");
+                    }
+
+                    _context.MovimientosCaja.Add(new MovimientoCaja
+                    {
+                        Fecha = DateTime.Now,
+                        TipoMovimientoId = tipoEgreso.TipoMovimientoId,
+                        Descripcion = $"Anulación Venta #{venta.VentaId}",
+                        Monto = montoIngresado,
+                        VentaId = venta.VentaId,
+                        UsuarioRegistro = venta.VendedorId,
+                        Comentarios = $"Motivo: {motivo}"
+                    });
+                }
+
+                // ── Marcar venta como anulada ───────────────────────────────────
+                venta.Estado = "Anulada";
+                venta.FechaAnulacion = DateTime.Now;
+                venta.MotivoAnulacion = motivo;
+
+                // ── Revertir estado del vehículo ────────────────────────────────
+                var estadoDisponible = await _context.EstadosVehiculo
+                    .FirstOrDefaultAsync(e => e.Descripcion == "Disponible");
+                if (estadoDisponible != null)
+                    venta.Vehiculo.EstadoId = estadoDisponible.EstadoId;
+
+                // ── Anular cuotas pendientes ────────────────────────────────────
+                var cuotasPendientes = await _context.Cuotas
+                    .Where(c => c.VentaId == id && c.Estado == "Pendiente")
+                    .ToListAsync();
+
+                foreach (var cuota in cuotasPendientes)
+                {
+                    cuota.Estado = "Anulada";
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { mensaje = "Venta anulada correctamente", montoReintegrado = montoIngresado });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, $"Error al anular la venta: {ex.Message}");
+            }
         }
     }
 }

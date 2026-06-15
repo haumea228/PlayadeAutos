@@ -1,4 +1,4 @@
-﻿@model PlayaAutos.Web.Models.CrearMovimientoViewModel
+@model PlayaAutos.Web.Models.CrearMovimientoViewModel
 @{
     Layout = null;
     ViewData["Title"] = "Nuevo Movimiento";
@@ -43,8 +43,9 @@
             </div>
         }
 
-        <form asp-action="Crear" method="post" novalidate>
+        <form asp-action="Crear" method="post" id="formCrear" novalidate>
             @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="TipoEgresoGastoId" />
 
             <div class="row g-3">
                 <div class="col-lg-8">
@@ -61,7 +62,7 @@
                             </div>
                             <div class="col-md-4">
                                 <label asp-for="TipoMovimientoId" class="pa-label">Tipo *</label>
-                                <select asp-for="TipoMovimientoId" class="pa-input" required>
+                                <select asp-for="TipoMovimientoId" id="selectTipo" class="pa-input" required>
                                     <option value="">— Seleccione —</option>
                                     @if (Model.TiposMovimiento != null && Model.TiposMovimiento.Any())
                                     {
@@ -89,8 +90,50 @@
                             </div>
                             <div class="col-md-12">
                                 <label asp-for="Comentarios" class="pa-label">Comentarios</label>
-                                <textarea asp-for="Comentarios" class="pa-input" rows="2" 
+                                <textarea asp-for="Comentarios" class="pa-input" rows="2"
                                           placeholder="Observaciones adicionales..." style="resize:vertical;"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Sección de gasto de vehículo (visible solo cuando tipo = Egreso por Gasto) *@
+                    <div id="seccionGasto" class="pa-card p-4 mt-3" style="display:none; border: 1px solid var(--pa-warning, #f59e0b);">
+                        <div class="section-title mb-3">
+                            <i class="fa-solid fa-car me-1" style="color:var(--pa-warning, #f59e0b);"></i>
+                            Datos del Gasto de Vehículo
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="VehiculoId" class="pa-label">Vehículo *</label>
+                                <select asp-for="VehiculoId" id="selectVehiculo" class="pa-input">
+                                    <option value="">— Seleccione un vehículo —</option>
+                                    @if (Model.Vehiculos != null)
+                                    {
+                                        foreach (var v in Model.Vehiculos)
+                                        {
+                                            <option value="@v.Value">@v.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="VehiculoId" class="val-msg"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="TipoGastoId" class="pa-label">Tipo de Gasto *</label>
+                                <select asp-for="TipoGastoId" id="selectTipoGasto" class="pa-input">
+                                    <option value="">— Seleccione —</option>
+                                    @if (Model.TiposGasto != null)
+                                    {
+                                        foreach (var t in Model.TiposGasto)
+                                        {
+                                            <option value="@t.Value">@t.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="TipoGastoId" class="val-msg"></span>
+                            </div>
+                            <div class="col-md-12">
+                                <label asp-for="Proveedor" class="pa-label">Proveedor</label>
+                                <input asp-for="Proveedor" class="pa-input" placeholder="Nombre del proveedor (opcional)" />
                             </div>
                         </div>
                     </div>
@@ -105,7 +148,14 @@
                         <div style="font-size:0.85rem;color:var(--pa-muted);">
                             <p><i class="fa-solid fa-plus-circle me-2" style="color:#22c55e;"></i><strong>Ingreso (+):</strong> suma al saldo de caja.</p>
                             <p><i class="fa-solid fa-minus-circle me-2" style="color:#ef4444;"></i><strong>Egreso (-):</strong> resta del saldo de caja.</p>
-                            <p style="margin:0;"><i class="fa-solid fa-robot me-2" style="color:var(--pa-info);"></i>Los movimientos por ventas y gastos de vehículos se generan automáticamente.</p>
+                            <p id="infoGasto" style="display:none; margin:0;">
+                                <i class="fa-solid fa-car me-2" style="color:var(--pa-warning, #f59e0b);"></i>
+                                Al seleccionar <strong>Egreso por Gasto</strong>, el egreso quedará vinculado al vehículo seleccionado y afectará su rentabilidad.
+                            </p>
+                            <p id="infoGeneral" style="margin:0;">
+                                <i class="fa-solid fa-robot me-2" style="color:var(--pa-info);"></i>
+                                Los movimientos por ventas y gastos de vehículos se generan automáticamente.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -115,7 +165,7 @@
                 <a href="/Caja" class="btn-pa-ghost">
                     <i class="fa-solid fa-xmark"></i> Cancelar
                 </a>
-                <button type="submit" class="btn-pa-primary">
+                <button type="submit" class="btn-pa-primary" id="btnGuardar">
                     <i class="fa-solid fa-floppy-disk"></i> Registrar
                 </button>
             </div>
@@ -124,7 +174,7 @@
 </div>
 
 <style>
-    .val-msg { font-size: 0.78rem; color: #f87191; margin-top: 3px; display: block; }
+    .val-msg { font-size: 0.78rem; color: #f87171; margin-top: 3px; display: block; }
     .action-btn {
         width: 34px; height: 34px;
         border-radius: 8px;
@@ -137,5 +187,37 @@
     }
     .action-btn:hover { background: rgba(255,255,255,0.06); color: var(--pa-text); }
 </style>
+
+<script>
+    const TIPO_EGRESO_GASTO = @Model.TipoEgresoGastoId;
+    const selectTipo       = document.getElementById('selectTipo');
+    const seccionGasto     = document.getElementById('seccionGasto');
+    const infoGasto        = document.getElementById('infoGasto');
+    const infoGeneral      = document.getElementById('infoGeneral');
+    const selectVehiculo   = document.getElementById('selectVehiculo');
+    const selectTipoGasto  = document.getElementById('selectTipoGasto');
+
+    function toggleGasto() {
+        const esGasto = parseInt(selectTipo.value) === TIPO_EGRESO_GASTO;
+        seccionGasto.style.display  = esGasto ? '' : 'none';
+        infoGasto.style.display     = esGasto ? '' : 'none';
+        infoGeneral.style.display   = esGasto ? 'none' : '';
+
+        // Los campos del gasto solo son required cuando el tipo es Egreso por Gasto
+        selectVehiculo.required  = esGasto;
+        selectTipoGasto.required = esGasto;
+    }
+
+    selectTipo.addEventListener('change', toggleGasto);
+
+    // Al cargar la página (por si hay un error de validación y se repopula el form)
+    toggleGasto();
+
+    document.getElementById('formCrear').addEventListener('submit', () => {
+        const btn = document.getElementById('btnGuardar');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...';
+    });
+</script>
 </body>
 </html>

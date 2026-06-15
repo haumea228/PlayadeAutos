@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace PlayaAutos.Web.Controllers
 {
-    public class ClientesController : Controller
+    public class ClientesController : AdminVendedorController
     {
         private readonly ApiService _api;
 
@@ -97,6 +97,13 @@ namespace PlayaAutos.Web.Controllers
                 RangoPrecioMax = dto.TryGetProperty("rangoPrecioMax", out var rMax)
                                  && rMax.ValueKind == JsonValueKind.Number
                                  ? rMax.GetInt64() : null,
+                EsConsignante = dto.TryGetProperty("esConsignante", out var esC) && esC.GetBoolean(),
+                ConsignanteId = dto.TryGetProperty("consignanteId", out var cid)
+                                && cid.ValueKind == JsonValueKind.Number
+                                ? cid.GetInt32() : null,
+                PorcentajeComisionDefault = dto.TryGetProperty("porcentajeComisionDefault", out var pct)
+                                           && pct.ValueKind == JsonValueKind.Number
+                                           ? pct.GetDecimal() : null,
             };
 
             return View(vm);
@@ -162,6 +169,25 @@ namespace PlayaAutos.Web.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+        // ── POST /Clientes/ConvertirConsignante ───────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConvertirConsignante(int id, decimal porcentajeComisionDefault)
+        {
+            if (!EstaAutenticado()) return RedirectToAction("Login", "Auth");
+
+            var resp = await _api.PutAsync($"api/Clientes/{id}/convertir-consignante", new
+            {
+                porcentajeComisionDefault
+            });
+
+            TempData[resp.IsSuccessStatusCode ? "Exito" : "Error"] = resp.IsSuccessStatusCode
+                ? "Cliente habilitado como consignante correctamente."
+                : "No se pudo convertir el cliente. Intente nuevamente.";
+
+            return RedirectToAction(nameof(Editar), new { id });
+        }
+
         // ── POST /Clientes/Reactivar ──────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]

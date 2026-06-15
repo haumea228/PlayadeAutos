@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using PlayaAutos.Web.Models;
 using PlayaAutos.Web.Services;
@@ -6,13 +6,18 @@ using System.Text.Json;
 
 namespace PlayaAutos.Web.Controllers
 {
-    public class VentasController : Controller
+    public class VentasController : AdminVendedorController
     {
         private readonly ApiService _api;
+        private readonly IWebHostEnvironment _env;
 
-        public VentasController(ApiService api)
+        private static readonly string[] _extensionesPermitidas = { ".jpg", ".jpeg", ".png", ".webp", ".pdf" };
+        private const long _maxTamanioComprob = 5 * 1024 * 1024; // 5 MB
+
+        public VentasController(ApiService api, IWebHostEnvironment env)
         {
             _api = api;
+            _env = env;
         }
 
         // ── GET /Ventas ──────────────────────────────────────────────────
@@ -49,8 +54,17 @@ namespace PlayaAutos.Web.Controllers
             if (vm.SaldoFinanciado.HasValue && vm.CantidadCuotas is null or <= 0)
                 ModelState.AddModelError("CantidadCuotas", "Indique la cantidad de cuotas para el saldo financiado.");
 
-            if (vm.ValorPermuta.HasValue && vm.VehiculoPermutaId is null)
-                ModelState.AddModelError("VehiculoPermutaId", "Seleccione el vehículo en permuta.");
+            // Validar pagos (deben sumar el monto de entrada, no el total)
+            if (vm.Pagos.Count == 0)
+                ModelState.AddModelError("", "Debe agregar al menos un pago.");
+            else
+            {
+                var montoEsperado = vm.MontoEntrada ?? vm.MontoTotal;
+                var sumaPagos = vm.Pagos.Sum(p => p.Monto);
+                if (sumaPagos != montoEsperado)
+                    ModelState.AddModelError("",
+                        $"La suma de los pagos (Gs. {sumaPagos:N0}) no coincide con el monto de entrada (Gs. {montoEsperado:N0}).");
+            }
 
             if (!ModelState.IsValid)
             {
@@ -58,7 +72,27 @@ namespace PlayaAutos.Web.Controllers
                 return View(vm);
             }
 
-            // VendedorId desde la sesión
+            // Procesar comprobantes
+            var uploadsPath = Path.Combine(_env.WebRootPath, "uploads", "comprobantes");
+            Directory.CreateDirectory(uploadsPath);
+
+            for (int i = 0; i < vm.Pagos.Count; i++)
+            {
+                var archivo = Request.Form.Files.GetFile($"ComprobanteFiles[{i}]");
+                if (archivo != null && archivo.Length > 0)
+                {
+                    var ext = Path.GetExtension(archivo.FileName).ToLowerInvariant();
+                    if (_extensionesPermitidas.Contains(ext) && archivo.Length <= _maxTamanioComprob)
+                    {
+                        var nombre = $"{Guid.NewGuid()}{ext}";
+                        var ruta = Path.Combine(uploadsPath, nombre);
+                        await using var stream = new FileStream(ruta, FileMode.Create);
+                        await archivo.CopyToAsync(stream);
+                        vm.Pagos[i].ComprobanteImagen = $"/uploads/comprobantes/{nombre}";
+                    }
+                }
+            }
+
             var vendedorId = HttpContext.Session.GetInt32("UsuarioId") ?? 0;
 
             var response = await _api.PostAsync("api/Ventas", new
@@ -67,23 +101,28 @@ namespace PlayaAutos.Web.Controllers
                 vm.VehiculoId,
                 VendedorId = vendedorId,
                 vm.TipoVentaId,
-                vm.FormaPagoId,
                 vm.FechaVenta,
                 vm.MontoTotal,
                 vm.MontoEntrada,
                 vm.SaldoFinanciado,
                 vm.TasaInteres,
                 vm.CantidadCuotas,
-                vm.VehiculoPermutaId,
-                vm.ValorPermuta
+                Pagos = vm.Pagos.Select(p => new
+                {
+                    p.FormaPagoId,
+                    p.Monto,
+                    p.ComprobanteImagen,
+                    p.Observacion,
+                    p.TasacionVehiculoId
+                }).ToList()
             });
 
             if (!response.IsSuccessStatusCode)
             {
                 var detalle = await response.Content.ReadAsStringAsync();
-                ModelState.AddModelError("", detalle.Contains("disponible")
-                    ? detalle
-                    : "Error al registrar la venta. Verifique los datos e intente nuevamente.");
+                ModelState.AddModelError("", string.IsNullOrWhiteSpace(detalle)
+                    ? "Error al registrar la venta. Verifique los datos e intente nuevamente."
+                    : detalle);
                 await CargarDropdowns(vm);
                 return View(vm);
             }
@@ -121,10 +160,11 @@ namespace PlayaAutos.Web.Controllers
 
         private async Task CargarDropdowns(VentaViewModel vm)
         {
-            var clientes = await _api.GetAsync<List<JsonElement>>("api/Clientes") ?? new();
-            var vehiculos = await _api.GetAsync<List<JsonElement>>("api/Vehiculos") ?? new();
-            var tiposVenta = await _api.GetAsync<List<JsonElement>>("api/Catalogos/tipos-venta") ?? new();
-            var formasPago = await _api.GetAsync<List<JsonElement>>("api/Catalogos/formas-pago") ?? new();
+            var clientes    = await _api.GetAsync<List<JsonElement>>("api/Clientes") ?? new();
+            var vehiculos   = await _api.GetAsync<List<JsonElement>>("api/Vehiculos") ?? new();
+            var tiposVenta  = await _api.GetAsync<List<JsonElement>>("api/Catalogos/tipos-venta") ?? new();
+            var formasPago  = await _api.GetAsync<List<JsonElement>>("api/Catalogos/formas-pago") ?? new();
+            var tasaciones  = await _api.GetAsync<List<JsonElement>>("api/Tasaciones") ?? new();
 
             vm.Clientes = clientes
                 .Where(c => c.TryGetProperty("activo", out var a) && a.GetBoolean())
@@ -133,14 +173,12 @@ namespace PlayaAutos.Web.Controllers
                     Get(c, "clienteId")))
                 .ToList();
 
-            // Solo vehículos disponibles (estado que permiteVenta)
             vm.Vehiculos = vehiculos
                 .Where(v =>
                 {
                     if (!v.TryGetProperty("estado", out var est)) return false;
                     if (est.ValueKind == JsonValueKind.Object)
                         return est.TryGetProperty("permiteVenta", out var pv) && pv.GetBoolean();
-                    // Si el estado viene como string, filtramos "Disponible"
                     var estadoStr = est.ValueKind == JsonValueKind.String ? est.GetString() ?? "" : "";
                     return estadoStr.Equals("Disponible", StringComparison.OrdinalIgnoreCase);
                 })
@@ -151,13 +189,6 @@ namespace PlayaAutos.Web.Controllers
                     Get(v, "vehiculoId")))
                 .ToList();
 
-            // Todos los vehículos para permuta (cualquier estado)
-            vm.VehiculosPermuta = vehiculos
-                .Select(v => new SelectListItem(
-                    Get(v, "codigoInterno") + " — " + Get(v, "marca") + " " + Get(v, "modelo"),
-                    Get(v, "vehiculoId")))
-                .ToList();
-
             vm.TiposVenta = tiposVenta
                 .Select(t => new SelectListItem(
                     Get(t, "descripcion"),
@@ -165,7 +196,6 @@ namespace PlayaAutos.Web.Controllers
                     false,
                     false)
                 {
-                    // Usamos Group para marcar si requiere financiación (lo leerá el JS)
                     Group = new SelectListGroup
                     {
                         Name = t.TryGetProperty("requiereFinanciacion", out var rf) && rf.GetBoolean()
@@ -176,6 +206,21 @@ namespace PlayaAutos.Web.Controllers
 
             vm.FormasPago = formasPago
                 .Select(f => new SelectListItem(Get(f, "descripcion"), Get(f, "formaPagoId")))
+                .ToList();
+
+            // Solo tasaciones Aprobadas (no Usadas) para usar como permuta
+            vm.TasacionesAprobadas = tasaciones
+                .Where(t => Get(t, "estadoTasacion") == "Aprobada")
+                .Select(t => new TasacionSelectItem
+                {
+                    TasacionVehiculoId = int.TryParse(Get(t, "tasacionVehiculoId"), out var tid) ? tid : 0,
+                    ClienteId = int.TryParse(Get(t, "clienteId"), out var cid) ? cid : 0,
+                    PrecioVenta = long.TryParse(Get(t, "precioVenta"), out var pv) ? pv : 0,
+                    ValorTasacion = long.TryParse(Get(t, "valorTasacion"), out var vt) ? vt : 0,
+                    Label = Get(t, "marcaVehiculo") + " " + Get(t, "modeloVehiculo") +
+                            " (" + Get(t, "anhoVehiculo") + ")" +
+                            " — Valor: Gs. " + (long.TryParse(Get(t, "valorTasacion"), out var vt2) ? vt2.ToString("N0") : "")
+                })
                 .ToList();
         }
 

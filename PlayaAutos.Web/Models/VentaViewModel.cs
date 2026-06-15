@@ -1,8 +1,27 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 
 namespace PlayaAutos.Web.Models
 {
+    public class PagoVentaViewModel
+    {
+        public int FormaPagoId { get; set; }
+        public long Monto { get; set; }
+        public string? Observacion { get; set; }
+        public int? TasacionVehiculoId { get; set; }
+        public string? ComprobanteImagen { get; set; }
+    }
+
+    public class TasacionSelectItem
+    {
+        public int TasacionVehiculoId { get; set; }
+        public int ClienteId { get; set; }
+        public string Label { get; set; } = string.Empty;
+        public long PrecioVenta { get; set; }
+        public long ValorTasacion { get; set; }
+    }
+
     public class VentaViewModel
     {
         // ── Dropdowns ────────────────────────────────────────────────────
@@ -18,11 +37,6 @@ namespace PlayaAutos.Web.Models
         [Display(Name = "Tipo de venta")]
         public int TipoVentaId { get; set; }
 
-        [Required(ErrorMessage = "Seleccione una forma de pago.")]
-        [Display(Name = "Forma de pago")]
-        public int FormaPagoId { get; set; }
-
-        // VendedorId se completa desde la sesión, no lo elige el usuario
         public int VendedorId { get; set; }
 
         // ── Datos de la venta ────────────────────────────────────────────
@@ -38,35 +52,31 @@ namespace PlayaAutos.Web.Models
 
         // ── Financiación (opcional) ──────────────────────────────────────
         [Display(Name = "Monto de entrada (Gs.)")]
-        [Range(0, long.MaxValue, ErrorMessage = "El monto de entrada debe ser positivo.")]
+        [Range(0, long.MaxValue)]
         public long? MontoEntrada { get; set; }
 
         [Display(Name = "Saldo financiado (Gs.)")]
-        [Range(0, long.MaxValue, ErrorMessage = "El saldo financiado debe ser positivo.")]
+        [Range(0, long.MaxValue)]
         public long? SaldoFinanciado { get; set; }
 
         [Display(Name = "Tasa de interés (%)")]
-        [Range(0, 100, ErrorMessage = "La tasa debe estar entre 0 y 100.")]
+        [Range(0, 100)]
         public decimal? TasaInteres { get; set; }
 
         [Display(Name = "Cantidad de cuotas")]
-        [Range(1, 120, ErrorMessage = "Las cuotas deben estar entre 1 y 120.")]
+        [Range(1, 120)]
         public int? CantidadCuotas { get; set; }
 
-        // ── Permuta (opcional) ───────────────────────────────────────────
-        [Display(Name = "Vehículo en permuta")]
-        public int? VehiculoPermutaId { get; set; }
-
-        [Display(Name = "Valor de permuta (Gs.)")]
-        [Range(0, long.MaxValue, ErrorMessage = "El valor de permuta debe ser positivo.")]
-        public long? ValorPermuta { get; set; }
+        // ── Pagos ────────────────────────────────────────────────────────
+        [ValidateNever]
+        public List<PagoVentaViewModel> Pagos { get; set; } = new();
 
         // ── Listas para dropdowns ────────────────────────────────────────
-        public List<SelectListItem> Clientes { get; set; } = new();
-        public List<SelectListItem> Vehiculos { get; set; } = new();
-        public List<SelectListItem> TiposVenta { get; set; } = new();
-        public List<SelectListItem> FormasPago { get; set; } = new();
-        public List<SelectListItem> VehiculosPermuta { get; set; } = new();
+        [ValidateNever] public List<SelectListItem> Clientes { get; set; } = new();
+        [ValidateNever] public List<SelectListItem> Vehiculos { get; set; } = new();
+        [ValidateNever] public List<SelectListItem> TiposVenta { get; set; } = new();
+        [ValidateNever] public List<SelectListItem> FormasPago { get; set; } = new();
+        [ValidateNever] public List<TasacionSelectItem> TasacionesAprobadas { get; set; } = new();
     }
 
     public class VentaListItem
@@ -76,7 +86,7 @@ namespace PlayaAutos.Web.Models
         public string Vehiculo { get; set; } = string.Empty;
         public string Vendedor { get; set; } = string.Empty;
         public string TipoVenta { get; set; } = string.Empty;
-        public string FormaPago { get; set; } = string.Empty;
+        public string FormasPago { get; set; } = string.Empty;
         public DateTime FechaVenta { get; set; }
         public long MontoTotal { get; set; }
         public string Estado { get; set; } = string.Empty;

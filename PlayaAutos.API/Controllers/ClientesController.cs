@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using PlayaAutos.API.Data;
 using PlayaAutos.API.DTOs;
 using PlayaAutos.API.Models;
-
 namespace PlayaAutos.API.Controllers
 {
     [ApiController]
@@ -42,7 +41,9 @@ namespace PlayaAutos.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ClienteDto>> GetCliente(int id)
         {
-            var c = await _context.Clientes.FindAsync(id);
+            var c = await _context.Clientes
+                .Include(x => x.Consignante)
+                .FirstOrDefaultAsync(x => x.ClienteId == id);
             if (c == null) return NotFound();
 
             return new ClienteDto
@@ -53,8 +54,36 @@ namespace PlayaAutos.API.Controllers
                 Telefono = c.Telefono,
                 Email = c.Email,
                 Direccion = c.Direccion,
-                Activo = c.Activo
+                Activo = c.Activo,
+                EsConsignante = c.Consignante != null,
+                ConsignanteId = c.Consignante?.ConsignanteId,
+                PorcentajeComisionDefault = c.Consignante?.PorcentajeComisionDefault
             };
+        }
+
+        // PUT: api/clientes/5/convertir-consignante
+        [HttpPut("{id}/convertir-consignante")]
+        public async Task<IActionResult> ConvertirConsignante(int id, ConvertirConsignanteDto dto)
+        {
+            var cliente = await _context.Clientes
+                .Include(c => c.Consignante)
+                .FirstOrDefaultAsync(c => c.ClienteId == id);
+
+            if (cliente == null) return NotFound();
+            if (cliente.Consignante != null)
+                return BadRequest("El cliente ya es consignante.");
+
+            var consignante = new Consignante
+            {
+                ClienteId = id,
+                PorcentajeComisionDefault = dto.PorcentajeComisionDefault,
+                Activo = true,
+                FechaAlta = DateTime.Now
+            };
+            _context.Consignantes.Add(consignante);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { consignanteId = consignante.ConsignanteId });
         }
 
         // POST: api/clientes
@@ -100,11 +129,13 @@ namespace PlayaAutos.API.Controllers
             if (cliente == null) return NotFound();
 
             cliente.Nombre = dto.Nombre;
+            cliente.CI_RUC = dto.CI_RUC;
             cliente.Telefono = dto.Telefono;
             cliente.Email = dto.Email;
             cliente.Direccion = dto.Direccion;
             cliente.RangoPrecioMin = dto.RangoPrecioMin;
             cliente.RangoPrecioMax = dto.RangoPrecioMax;
+            cliente.Activo = dto.Activo;
 
             await _context.SaveChangesAsync();
             return NoContent();

@@ -12,7 +12,7 @@ using PlayaAutos.API.Data;
 namespace PlayaAutos.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260421035057_InitialCreate")]
+    [Migration("20260511151541_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -162,7 +162,7 @@ namespace PlayaAutos.API.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("PorcentajeComisionDefault")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(5,2)");
 
                     b.HasKey("ConsignanteId");
 
@@ -204,7 +204,7 @@ namespace PlayaAutos.API.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("PorcentajeComision")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<string>("RutaPDF")
                         .HasColumnType("nvarchar(max)");
@@ -228,6 +228,9 @@ namespace PlayaAutos.API.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CuotaId"));
+
+                    b.Property<string>("ComprobanteImagen")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Estado")
                         .IsRequired()
@@ -256,6 +259,9 @@ namespace PlayaAutos.API.Migrations
 
                     b.Property<int>("NumeroCuota")
                         .HasColumnType("int");
+
+                    b.Property<string>("ObservacionPago")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("VentaId")
                         .HasColumnType("int");
@@ -595,6 +601,9 @@ namespace PlayaAutos.API.Migrations
                     b.Property<string>("RutaPDF")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("TasacionVehiculoId")
+                        .HasColumnType("int");
+
                     b.Property<int>("TimbradoId")
                         .HasColumnType("int");
 
@@ -611,6 +620,8 @@ namespace PlayaAutos.API.Migrations
 
                     b.HasIndex("NumeroNota")
                         .IsUnique();
+
+                    b.HasIndex("TasacionVehiculoId");
 
                     b.HasIndex("TimbradoId");
 
@@ -637,6 +648,106 @@ namespace PlayaAutos.API.Migrations
                     b.HasKey("OrigenId");
 
                     b.ToTable("OrigenesVehiculo");
+                });
+
+            modelBuilder.Entity("PlayaAutos.API.Models.PagoVenta", b =>
+                {
+                    b.Property<int>("PagoVentaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PagoVentaId"));
+
+                    b.Property<string>("ComprobanteImagen")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("FormaPagoId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Monto")
+                        .HasColumnType("numeric(15,0)");
+
+                    b.Property<string>("Observacion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("TasacionVehiculoId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VentaId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PagoVentaId");
+
+                    b.HasIndex("FormaPagoId");
+
+                    b.HasIndex("TasacionVehiculoId");
+
+                    b.HasIndex("VentaId");
+
+                    b.ToTable("PagosVenta");
+                });
+
+            modelBuilder.Entity("PlayaAutos.API.Models.TasacionVehiculo", b =>
+                {
+                    b.Property<int>("TasacionVehiculoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TasacionVehiculoId"));
+
+                    b.Property<int>("AnhoVehiculo")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClienteId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ColorVehiculo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EstadoGeneralVehiculo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EstadoTasacion")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("FechaRegistro")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaTasacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("KilometrajeVehiculo")
+                        .HasColumnType("numeric(15,2)");
+
+                    b.Property<string>("MarcaVehiculo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ModeloVehiculo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("PrecioVenta")
+                        .HasColumnType("numeric(15,0)");
+
+                    b.Property<int>("UsuarioTasacion")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ValorTasacion")
+                        .HasColumnType("numeric(15,0)");
+
+                    b.Property<int?>("VehiculoId")
+                        .HasColumnType("int");
+
+                    b.HasKey("TasacionVehiculoId");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("VehiculoId");
+
+                    b.ToTable("TasacionesVehiculo");
                 });
 
             modelBuilder.Entity("PlayaAutos.API.Models.Timbrado", b =>
@@ -781,7 +892,8 @@ namespace PlayaAutos.API.Migrations
                     b.Property<DateTime>("FechaAltaUsuario")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("GAMUserId")
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Rol")
@@ -856,7 +968,7 @@ namespace PlayaAutos.API.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal?>("PorcentajeComision")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<decimal>("PrecioVenta")
                         .HasColumnType("numeric(15,0)");
@@ -911,9 +1023,6 @@ namespace PlayaAutos.API.Migrations
                     b.Property<DateTime>("FechaVenta")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("FormaPagoId")
-                        .HasColumnType("int");
-
                     b.Property<decimal?>("MontoEntrada")
                         .HasColumnType("numeric(15,0)");
 
@@ -927,18 +1036,12 @@ namespace PlayaAutos.API.Migrations
                         .HasColumnType("numeric(15,0)");
 
                     b.Property<decimal?>("TasaInteres")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<int>("TipoVentaId")
                         .HasColumnType("int");
 
-                    b.Property<decimal?>("ValorPermuta")
-                        .HasColumnType("numeric(15,0)");
-
                     b.Property<int>("VehiculoId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("VehiculoPermutaId")
                         .HasColumnType("int");
 
                     b.Property<int>("VendedorId")
@@ -947,8 +1050,6 @@ namespace PlayaAutos.API.Migrations
                     b.HasKey("VentaId");
 
                     b.HasIndex("ClienteId");
-
-                    b.HasIndex("FormaPagoId");
 
                     b.HasIndex("TipoVentaId");
 
@@ -1134,6 +1235,11 @@ namespace PlayaAutos.API.Migrations
 
             modelBuilder.Entity("PlayaAutos.API.Models.NotaCredito", b =>
                 {
+                    b.HasOne("PlayaAutos.API.Models.TasacionVehiculo", "TasacionVehiculo")
+                        .WithMany()
+                        .HasForeignKey("TasacionVehiculoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PlayaAutos.API.Models.Timbrado", "Timbrado")
                         .WithMany("NotasCredito")
                         .HasForeignKey("TimbradoId")
@@ -1152,11 +1258,57 @@ namespace PlayaAutos.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("TasacionVehiculo");
+
                     b.Navigation("Timbrado");
 
                     b.Navigation("Vehiculo");
 
                     b.Navigation("Venta");
+                });
+
+            modelBuilder.Entity("PlayaAutos.API.Models.PagoVenta", b =>
+                {
+                    b.HasOne("PlayaAutos.API.Models.FormaPago", "FormaPago")
+                        .WithMany("PagosVenta")
+                        .HasForeignKey("FormaPagoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PlayaAutos.API.Models.TasacionVehiculo", "TasacionVehiculo")
+                        .WithMany("PagosVenta")
+                        .HasForeignKey("TasacionVehiculoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PlayaAutos.API.Models.Venta", "Venta")
+                        .WithMany("PagosVenta")
+                        .HasForeignKey("VentaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FormaPago");
+
+                    b.Navigation("TasacionVehiculo");
+
+                    b.Navigation("Venta");
+                });
+
+            modelBuilder.Entity("PlayaAutos.API.Models.TasacionVehiculo", b =>
+                {
+                    b.HasOne("PlayaAutos.API.Models.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PlayaAutos.API.Models.Vehiculo", "Vehiculo")
+                        .WithMany()
+                        .HasForeignKey("VehiculoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("Vehiculo");
                 });
 
             modelBuilder.Entity("PlayaAutos.API.Models.Vehiculo", b =>
@@ -1216,12 +1368,6 @@ namespace PlayaAutos.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PlayaAutos.API.Models.FormaPago", "FormaPago")
-                        .WithMany("Ventas")
-                        .HasForeignKey("FormaPagoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("PlayaAutos.API.Models.TipoVenta", "TipoVenta")
                         .WithMany("Ventas")
                         .HasForeignKey("TipoVentaId")
@@ -1241,8 +1387,6 @@ namespace PlayaAutos.API.Migrations
                         .IsRequired();
 
                     b.Navigation("Cliente");
-
-                    b.Navigation("FormaPago");
 
                     b.Navigation("TipoVenta");
 
@@ -1291,7 +1435,7 @@ namespace PlayaAutos.API.Migrations
                 {
                     b.Navigation("Cuotas");
 
-                    b.Navigation("Ventas");
+                    b.Navigation("PagosVenta");
                 });
 
             modelBuilder.Entity("PlayaAutos.API.Models.GastoVehiculo", b =>
@@ -1312,6 +1456,11 @@ namespace PlayaAutos.API.Migrations
             modelBuilder.Entity("PlayaAutos.API.Models.OrigenVehiculo", b =>
                 {
                     b.Navigation("Vehiculos");
+                });
+
+            modelBuilder.Entity("PlayaAutos.API.Models.TasacionVehiculo", b =>
+                {
+                    b.Navigation("PagosVenta");
                 });
 
             modelBuilder.Entity("PlayaAutos.API.Models.Timbrado", b =>
@@ -1370,6 +1519,8 @@ namespace PlayaAutos.API.Migrations
                     b.Navigation("MovimientosCaja");
 
                     b.Navigation("NotaCredito");
+
+                    b.Navigation("PagosVenta");
                 });
 #pragma warning restore 612, 618
         }

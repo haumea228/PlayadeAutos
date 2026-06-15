@@ -1,16 +1,16 @@
-﻿#pragma warning disable CS8602
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PlayaAutos.API.Data;
 using PlayaAutos.API.DTOs;
 using PlayaAutos.API.Models;
+using System.Security.Claims;
 
 namespace PlayaAutos.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "AdministradorP,Vendedor,Cliente")]
+    [Authorize(Roles = "AdministradorP,Vendedor")]
     public class CitasController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -24,24 +24,35 @@ namespace PlayaAutos.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CitaDto>>> GetCitas()
         {
-            return await _context.Citas
+            var citas = await _context.Citas
                 .Include(c => c.Cliente)
                 .Include(c => c.Vehiculo).ThenInclude(v => v.Modelo).ThenInclude(m => m.Marca)
                 .Include(c => c.EstadoCita)
+                .OrderByDescending(c => c.FechaHora)
                 .Select(c => new CitaDto
                 {
                     CitaId = c.CitaId,
-                    Cliente = c.Cliente!.Nombre,
+                    ClienteId = c.ClienteId,
+                    Cliente = c.Cliente.Nombre,
+                    VehiculoId = c.VehiculoId,
                     Vehiculo = c.Vehiculo != null
-                        ? c.Vehiculo!.Modelo.Marca.Nombre + " " + c.Vehiculo.Modelo.Nombre
+                        ? c.Vehiculo.CodigoInterno + " - " + c.Vehiculo.Modelo.Marca.Nombre + " " + c.Vehiculo.Modelo.Nombre
                         : null,
-                    Vendedor = c.VendedorId.ToString(),
-                    EstadoCita = c.EstadoCita.Descripcion,
+                    VendedorId = c.VendedorId,
+                    Vendedor = _context.Usuarios
+                        .Where(u => u.UsuarioId == c.VendedorId)
+                        .Select(u => u.UsuarioNombre)
+                        .FirstOrDefault() ?? "Sin asignar",
+                    EstadoCitaId = c.EstadoCitaId,
+                    Estado = c.EstadoCita.Descripcion,
+                    EstadoColor = c.EstadoCita.Color,
                     FechaHora = c.FechaHora,
                     TipoCita = c.TipoCita,
                     Observaciones = c.Observaciones
                 })
                 .ToListAsync();
+
+            return Ok(citas);
         }
 
         // GET: api/citas/5
@@ -50,62 +61,61 @@ namespace PlayaAutos.API.Controllers
         {
             var c = await _context.Citas
                 .Include(c => c.Cliente)
-                .Include(c => c.Vehiculo).ThenInclude(v => v.Modelo).ThenInclude(m => m.Marca)
+                .Include(c => c.Vehiculo)
                 .Include(c => c.EstadoCita)
                 .FirstOrDefaultAsync(c => c.CitaId == id);
 
             if (c == null) return NotFound();
 
+            var vendedor = await _context.Usuarios
+                .Where(u => u.UsuarioId == c.VendedorId)
+                .Select(u => u.UsuarioNombre)
+                .FirstOrDefaultAsync();
+
             return new CitaDto
             {
                 CitaId = c.CitaId,
+                ClienteId = c.ClienteId,
                 Cliente = c.Cliente.Nombre,
-                Vehiculo = c.Vehiculo != null
-                    ? c.Vehiculo!.Modelo.Marca.Nombre + " " + c.Vehiculo.Modelo.Nombre
-                    : null,
-                Vendedor = c.VendedorId.ToString(),
-                EstadoCita = c.EstadoCita.Descripcion,
+                VehiculoId = c.VehiculoId,
+                Vehiculo = c.Vehiculo != null ? c.Vehiculo.CodigoInterno : null,
+                VendedorId = c.VendedorId,
+                Vendedor = vendedor ?? "Sin asignar",
+                EstadoCitaId = c.EstadoCitaId,
+                Estado = c.EstadoCita.Descripcion,
+                EstadoColor = c.EstadoCita.Color,
                 FechaHora = c.FechaHora,
                 TipoCita = c.TipoCita,
                 Observaciones = c.Observaciones
             };
         }
 
-        // GET: api/citas/cliente/5
-        [HttpGet("cliente/{clienteId}")]
-        public async Task<ActionResult<IEnumerable<CitaDto>>> GetCitasPorCliente(int clienteId)
-        {
-            return await _context.Citas
-                .Include(c => c.Cliente)
-                .Include(c => c.Vehiculo).ThenInclude(v => v.Modelo).ThenInclude(m => m.Marca)
-                .Include(c => c.EstadoCita)
-                .Where(c => c.ClienteId == clienteId)
-                .Select(c => new CitaDto
-                {
-                    CitaId = c.CitaId,
-                    Cliente = c.Cliente!.Nombre,
-                    Vehiculo = c.Vehiculo != null
-                        ? c.Vehiculo!.Modelo.Marca.Nombre + " " + c.Vehiculo.Modelo.Nombre
-                        : null,
-                    Vendedor = c.VendedorId.ToString(),
-                    EstadoCita = c.EstadoCita.Descripcion,
-                    FechaHora = c.FechaHora,
-                    TipoCita = c.TipoCita,
-                    Observaciones = c.Observaciones
-                })
-                .ToListAsync();
-        }
-
         // POST: api/citas
         [HttpPost]
-        public async Task<ActionResult<CitaDto>> PostCita(CrearCitaDto dto)
+        public async Task<ActionResult> PostCita(CrearCitaDto dto)
         {
+            var cliente = await _context.Clientes.FindAsync(dto.ClienteId);
+            if (cliente == null)
+                return BadRequest("El cliente no existe.");
+
+            var vendedor = await _context.Usuarios.FindAsync(dto.VendedorId);
+            if (vendedor == null)
+                return BadRequest("El vendedor no existe.");
+
+            var estadoCita = await _context.EstadosCita.FindAsync(
+                dto.EstadoCitaId > 0 ? dto.EstadoCitaId : 1);
+            if (estadoCita == null)
+                return BadRequest("El estado de cita no existe.");
+            // 🟢 Validar fecha/hora
+            var errorFecha = ValidarFechaCita(dto.FechaHora);
+            if (errorFecha != null)
+                return BadRequest(errorFecha);
             var cita = new Cita
             {
                 ClienteId = dto.ClienteId,
                 VehiculoId = dto.VehiculoId,
                 VendedorId = dto.VendedorId,
-                EstadoCitaId = dto.EstadoCitaId,
+                EstadoCitaId = dto.EstadoCitaId > 0 ? dto.EstadoCitaId : 1,
                 FechaHora = dto.FechaHora,
                 TipoCita = dto.TipoCita,
                 Observaciones = dto.Observaciones,
@@ -114,30 +124,123 @@ namespace PlayaAutos.API.Controllers
 
             _context.Citas.Add(cita);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetCita), new { id = cita.CitaId }, null);
+
+            return CreatedAtAction(nameof(GetCita), new { id = cita.CitaId },
+                new { cita.CitaId });
+        }
+
+        // PUT: api/citas/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutCita(int id, CrearCitaDto dto)
+        {
+            var cita = await _context.Citas.FindAsync(id);
+            if (cita == null) return NotFound();
+
+            // 🟢 Validar fecha/hora
+            var errorFecha = ValidarFechaCita(dto.FechaHora);
+            if (errorFecha != null)
+                return BadRequest(errorFecha);
+
+            cita.ClienteId = dto.ClienteId;
+            cita.VehiculoId = dto.VehiculoId;
+            cita.VendedorId = dto.VendedorId;
+            cita.FechaHora = dto.FechaHora;
+            cita.TipoCita = dto.TipoCita;
+            cita.Observaciones = dto.Observaciones;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { cita.CitaId });
         }
 
         // PUT: api/citas/5/estado
         [HttpPut("{id}/estado")]
-        public async Task<IActionResult> CambiarEstado(int id, [FromBody] int estadoCitaId)
+        public async Task<IActionResult> CambiarEstado(int id, [FromBody] CambiarEstadoCitaDto dto)
         {
             var cita = await _context.Citas.FindAsync(id);
             if (cita == null) return NotFound();
 
-            cita.EstadoCitaId = estadoCitaId;
+            var estado = await _context.EstadosCita.FindAsync(dto.EstadoCitaId);
+            if (estado == null)
+                return BadRequest("El estado no existe.");
+
+            cita.EstadoCitaId = dto.EstadoCitaId;
             await _context.SaveChangesAsync();
-            return NoContent();
+
+            return Ok(new { cita.CitaId, estado = estado.Descripcion });
         }
 
-        // DELETE: api/citas/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCita(int id)
+        // GET: api/citas/estados
+        [HttpGet("estados")]
+        public async Task<ActionResult<IEnumerable<EstadoCitaDto>>> GetEstadosCita()
         {
-            var cita = await _context.Citas.FindAsync(id);
-            if (cita == null) return NotFound();
-            _context.Citas.Remove(cita);
-            await _context.SaveChangesAsync();
-            return NoContent();
+            var estados = await _context.EstadosCita
+                .Select(e => new EstadoCitaDto
+                {
+                    EstadoCitaId = e.EstadoCitaId,
+                    Descripcion = e.Descripcion,
+                    Color = e.Color
+                })
+                .ToListAsync();
+
+            return Ok(estados);
+        }
+
+        private string? ValidarFechaCita(DateTime fechaHora)
+        {
+            // No puede ser en el pasado
+            if (fechaHora < DateTime.Now)
+                return "La fecha y hora no puede ser en el pasado.";
+
+            // Solo Lunes a Sábado (Domingo = 0)
+            if (fechaHora.DayOfWeek == DayOfWeek.Sunday)
+                return "No se agendan citas los domingos.";
+
+            // Horario 08:00 a 18:00
+            var hora = fechaHora.TimeOfDay;
+            if (hora < TimeSpan.FromHours(8) || hora > TimeSpan.FromHours(18))
+                return "Las citas deben agendarse entre las 08:00 y 18:00 hs.";
+
+            // Feriados nacionales (fijos + Semana Santa)
+            if (EsFeriado(fechaHora))
+                return "No se agendan citas en días feriados.";
+
+            return null; // Válido
+        }
+
+        private bool EsFeriado(DateTime fecha)
+        {
+            // Feriados fijos
+            var feriados = new List<DateTime>
+    {
+        new(fecha.Year, 1, 1),   // Año Nuevo
+        new(fecha.Year, 3, 1),   // Día de los Héroes
+        new(fecha.Year, 5, 1),   // Día del Trabajador
+        new(fecha.Year, 5, 14),  // Independencia
+        new(fecha.Year, 5, 15),  // Independencia
+        new(fecha.Year, 6, 12),  // Paz del Chaco
+        new(fecha.Year, 8, 15),  // Fundación de Asunción
+        new(fecha.Year, 9, 29),  // Boquerón
+        new(fecha.Year, 12, 8),  // Virgen de Caacupé
+        new(fecha.Year, 12, 25), // Navidad
+    };
+
+            // Semana Santa (cálculo)
+            var ss = CalcularSemanaSanta(fecha.Year);
+            feriados.Add(ss.JuevesSanto);
+            feriados.Add(ss.ViernesSanto);
+
+            return feriados.Any(f => f.Date == fecha.Date);
+        }
+
+        private (DateTime JuevesSanto, DateTime ViernesSanto) CalcularSemanaSanta(int año)
+        {
+            int a = año % 19, b = año % 4, c = año % 7;
+            int d = (19 * a + 24) % 30;
+            int e = (2 * b + 4 * c + 6 * d + 5) % 7;
+            int dias = 22 + d + e;
+            DateTime pascua = dias <= 31 ? new(año, 3, dias) : new(año, 4, dias - 31);
+            return (pascua.AddDays(-3), pascua.AddDays(-2));
         }
     }
 }

@@ -69,6 +69,56 @@ namespace PlayaAutos.API.Controllers
             return Ok("Usuario creado correctamente.");
         }
 
+        // POST: api/auth/registro-cliente
+        [HttpPost("registro-cliente")]
+        public async Task<IActionResult> RegistroCliente(RegistroClienteDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (await _context.Usuarios.AnyAsync(u => u.UsuarioEmail == dto.Email))
+                return BadRequest("El email ya está registrado.");
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var usuario = new Models.Usuario
+                {
+                    UsuarioNombre = dto.Nombre,
+                    UsuarioEmail = dto.Email,
+                    UsuarioPhone = dto.Telefono,
+                    PasswordHash = HashPassword(dto.Password),
+                    Rol = "Cliente",
+                    ActivoUsuario = true,
+                    FechaAltaUsuario = DateTime.Now
+                };
+
+                _context.Usuarios.Add(usuario);
+                await _context.SaveChangesAsync();
+
+                var cliente = new Models.Cliente
+                {
+                    UsuarioId = usuario.UsuarioId,
+                    Nombre = dto.Nombre,
+                    Telefono = dto.Telefono,
+                    Email = dto.Email,
+                    Activo = true,
+                    FechaAlta = DateTime.Now
+                };
+
+                _context.Clientes.Add(cliente);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                return Ok("Cuenta creada exitosamente.");
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, "Error al crear la cuenta. Intentá nuevamente.");
+            }
+        }
+
         private static string HashPassword(string password)
         {
             var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(password));
