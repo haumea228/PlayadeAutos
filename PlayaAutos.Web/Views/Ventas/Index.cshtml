@@ -56,11 +56,12 @@
                            placeholder="Buscar por cliente, vehículo, vendedor..." />
                     <i class="fa-solid fa-magnifying-glass input-icon"></i>
                 </div>
-                <select id="filtroEstado" class="pa-input" style="max-width:180px;">
-                    <option value="">Todos los estados</option>
-                    <option value="Registrada">Registrada</option>
-                    <option value="Anulada">Anulada</option>
-                </select>
+                    <select id="filtroEstado" class="pa-input" style="max-width:180px;">
+                        <option value="">Todos los estados</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Registrada">Registrada</option>
+                        <option value="Anulada">Anulada</option>
+                    </select>
             </div>
         </div>
 
@@ -110,20 +111,26 @@
                                     <td style="font-weight:600;font-size:0.88rem;">
                                         Gs. @v.MontoTotal.ToString("N0")
                                     </td>
-                                    <td>
-                                        @if (v.Estado == "Registrada")
-                                        {
-                                            <span class="estado-badge" style="background:rgba(34,197,94,.12);color:#22c55e;">
-                                                Registrada
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="estado-badge" style="background:rgba(239,68,68,.12);color:#ef4444;">
-                                                Anulada
-                                            </span>
-                                        }
-                                    </td>
+                                        <td>
+                                            @if (v.Estado == "Pendiente")
+                                            {
+                                                <span class="estado-badge" style="background:rgba(234,179,8,.12);color:#ca8a04;">
+                                                    <i class="fa-solid fa-clock fa-xs me-1"></i>Pendiente
+                                                </span>
+                                            }
+                                            else if (v.Estado == "Registrada")
+                                            {
+                                                <span class="estado-badge" style="background:rgba(34,197,94,.12);color:#22c55e;">
+                                                    <i class="fa-solid fa-check fa-xs me-1"></i>Registrada
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="estado-badge" style="background:rgba(239,68,68,.12);color:#ef4444;">
+                                                    @v.Estado
+                                                </span>
+                                            }
+                                        </td>
                                     <td>
                                         @if (v.Estado == "Registrada")
                                         {

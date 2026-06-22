@@ -237,5 +237,30 @@ namespace PlayaAutos.Web.Controllers
                     : val2.GetString() ?? "";
             return "";
         }
+        // GET /Ventas/Pendientes
+        public async Task<IActionResult> Pendientes()
+        {
+            if (!EstaAutenticado()) return RedirectToAction("Login", "Auth");
+            var rol = HttpContext.Session.GetString("Rol");
+            if (rol != "AdministradorP" && rol != "Cajero")
+                return RedirectToAction("AccesoDenegado", "Auth");
+
+            var ventas = await _api.GetAsync<List<VentaListItem>>("api/Ventas") ?? new();
+            ventas = ventas.Where(v => v.Estado == "Pendiente").ToList();
+            return View(ventas);
+        }
+
+        // POST /Ventas/Finalizar/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Finalizar(int id)
+        {
+            if (!EstaAutenticado()) return RedirectToAction("Login", "Auth");
+            var resp = await _api.PutAsync($"api/Ventas/{id}/finalizar", new { });
+            TempData[resp.IsSuccessStatusCode ? "Exito" : "Error"] = resp.IsSuccessStatusCode
+                ? "Venta finalizada correctamente."
+                : "Error al finalizar la venta.";
+            return RedirectToAction(nameof(Pendientes));
+        }
     }
 }

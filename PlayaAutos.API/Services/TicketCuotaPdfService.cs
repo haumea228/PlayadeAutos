@@ -20,6 +20,7 @@ namespace PlayaAutos.API.Services
         public long Recargo { get; set; }
         public long SaldoActual { get; set; }
         public string UsuarioRegistro { get; set; } = "";
+        public string CI_RUC { get; set; } = ""; 
     }
 
     public static class TicketCuotaPdfService
@@ -77,6 +78,13 @@ namespace PlayaAutos.API.Services
                             header.Item().AlignCenter()
                                   .Text($"CLIENTE: {d.Cliente.ToUpper()}")
                                   .FontSize(8f);
+
+                            if (!string.IsNullOrWhiteSpace(d.CI_RUC))
+                            {
+                                header.Item().AlignCenter()
+                                      .Text($"CI/RUC: {d.CI_RUC}")
+                                      .FontSize(7.5f).FontColor("#555555");
+                            }
                         });
 
                         col.Item().Height(6);

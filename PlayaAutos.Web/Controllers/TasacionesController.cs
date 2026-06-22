@@ -149,5 +149,13 @@ namespace PlayaAutos.Web.Controllers
             if (el.TryGetProperty(camel, out var val2)) return val2.ValueKind == JsonValueKind.Number ? val2.GetRawText() : val2.GetString() ?? "";
             return "";
         }
+
+        [HttpGet]
+        [Route("/Tasaciones/GetVehiculo/{id}")]
+        public async Task<IActionResult> GetVehiculo(int id)
+        {
+            var vehiculo = await _api.GetAsync<JsonElement>($"api/Vehiculos/{id}");
+            return Json(vehiculo);
+        }
     }
 }

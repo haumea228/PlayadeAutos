@@ -9,7 +9,7 @@ namespace PlayaAutos.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "AdministradorP,Vendedor")]
+    [Authorize(Roles = "AdministradorP,Vendedor,Cajero")]
     public class NotasCreditoController : ControllerBase
     {
         private readonly AppDbContext _context;

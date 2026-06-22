@@ -12,7 +12,7 @@ namespace PlayaAutos.Web.Controllers
         public override void OnActionExecuting(ActionExecutingContext context)
         {
             var rol = HttpContext.Session.GetString("Rol");
-            if (rol != "AdministradorP" && rol != "Vendedor")
+            if (rol != "AdministradorP" && rol != "Vendedor" && rol != "Cajero")
             {
                 context.Result = RedirectToAction("Login", "Auth");
             }

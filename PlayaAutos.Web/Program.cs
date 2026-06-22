@@ -9,7 +9,7 @@ builder.Services.AddHttpClient<ApiService>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"]!);
 });
-
+    
 // Sesión para guardar el token JWT
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSession(options =>

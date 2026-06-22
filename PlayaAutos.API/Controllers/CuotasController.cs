@@ -10,7 +10,7 @@ namespace PlayaAutos.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "AdministradorP,Vendedor")]
+    [Authorize(Roles = "AdministradorP,Vendedor,Cajero")]
     public class CuotasController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -154,7 +154,7 @@ namespace PlayaAutos.API.Controllers
                     Fecha = DateTime.Now,
                     TipoMovimientoId = tipoIngreso.TipoMovimientoId,
                     Descripcion = $"Cobro Cuota #{cuota.NumeroCuota} - Venta #{cuota.VentaId}",
-                    Monto = dto.MontoPagado,
+                    Monto = dto.MontoPagado + (dto.MontoRecargo ?? 0),
                     CuotaId = cuota.CuotaId,
                     FormaPagoId = dto.FormaPagoId,
                     UsuarioRegistro = dto.UsuarioRegistro,
@@ -217,6 +217,7 @@ namespace PlayaAutos.API.Controllers
                 Abono = abono,
                 Recargo = recargo,
                 SaldoActual = Math.Max(0, saldoActual),
+                CI_RUC = cuota.Venta.Cliente.CI_RUC ?? "",
                 UsuarioRegistro = venta.Vendedor?.UsuarioNombre ?? "Sistema"
             };
 

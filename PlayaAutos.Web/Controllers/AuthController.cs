@@ -56,9 +56,12 @@ namespace PlayaAutos.Web.Controllers
             HttpContext.Session.SetString("Rol", result.Rol);
             HttpContext.Session.SetInt32("UsuarioId", result.UsuarioId);
 
-            return result.Rol == "Cliente"
-                ? RedirectToAction("IndexCliente", "Catalogo")
-                : RedirectToAction("Index", "Dashboard");
+            if (result.Rol == "Cliente")
+                return RedirectToAction("IndexCliente", "Catalogo");
+            else if (result.Rol == "Cajero")
+                return RedirectToAction("Pendientes", "Ventas");
+            else
+                return RedirectToAction("Index", "Dashboard");
         }
 
         [HttpGet]

@@ -27,7 +27,7 @@
         <div class="pa-page-header d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div>
                 <h4><i class="fa-solid fa-users-gear me-2" style="color:var(--pa-accent);"></i>Usuarios</h4>
-                <p>Gestión de vendedores y administradores</p>
+                <p>Gestión de administradores, vendedores y cajeros</p>
             </div>
             <a href="/Usuarios/Crear" class="btn-pa-primary">
                 <i class="fa-solid fa-plus"></i> Nuevo usuario
@@ -56,12 +56,13 @@
                            placeholder="Buscar por nombre o email..." />
                     <i class="fa-solid fa-magnifying-glass input-icon"></i>
                 </div>
-                <select id="filtroRol" class="pa-input" style="max-width:180px;">
-                    <option value="">Todos los roles</option>
-                    <option value="AdministradorP">Administrador</option>
-                    <option value="Vendedor">Vendedor</option>
-                    <option value="Cliente">Cliente</option>
-                </select>
+                    <select id="filtroRol" class="pa-input" style="max-width:180px;">
+                        <option value="">Todos los roles</option>
+                        <option value="AdministradorP">Administrador</option>
+                        <option value="Vendedor">Vendedor</option>
+                        <option value="Cajero">Cajero</option>
+                        <option value="Cliente">Cliente</option>
+                    </select>
                 <select id="filtroEstado" class="pa-input" style="max-width:160px;">
                     <option value="">Todos los estados</option>
                     <option value="activo">Activos</option>
@@ -105,13 +106,17 @@
                                     data-estado="@(u.ActivoUsuario ? "activo" : "inactivo")">
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
-                                            <div style="width:34px;height:34px;border-radius:50%;
-                                                        background:@(u.Rol == "AdministradorP" ? "rgba(233,69,96,.12)" : "rgba(59,130,246,.12)");
-                                                        display:flex;align-items:center;justify-content:center;
-                                                        font-weight:700;font-size:.82rem;flex-shrink:0;
-                                                        color:@(u.Rol == "AdministradorP" ? "var(--pa-accent)" : "var(--pa-info)");">
-                                                @(u.UsuarioNombre.Length > 0 ? u.UsuarioNombre[0].ToString().ToUpper() : "?")
-                                            </div>
+                                                <div style="width:34px;height:34px;border-radius:50%;
+                                                    background:@(u.Rol == "AdministradorP" ? "rgba(233,69,96,.12)" :
+                                                                              u.Rol == "Cajero" ? "rgba(234,179,8,.12)" :
+                                                                              "rgba(59,130,246,.12)");
+                                                    display:flex;align-items:center;justify-content:center;
+                                                    font-weight:700;font-size:.82rem;flex-shrink:0;
+                                                    color:@(u.Rol == "AdministradorP" ? "var(--pa-accent)" :
+                                                                          u.Rol == "Cajero" ? "#ca8a04" :
+                                                                          "var(--pa-info)");">
+                                                    @(u.UsuarioNombre.Length > 0 ? u.UsuarioNombre[0].ToString().ToUpper() : "?")
+                                                </div>
                                             <div>
                                                 <div style="font-weight:600;">
                                                     @u.UsuarioNombre
@@ -138,11 +143,17 @@
                                             <span style="color:var(--pa-muted);">—</span>
                                         }
                                     </td>
-                                        <td> 
+                                        <td>
                                             @if (u.Rol == "AdministradorP")
                                             {
                                                 <span class="rol-badge" style="background:rgba(233,69,96,.12);color:var(--pa-accent);">
                                                     <i class="fa-solid fa-shield-halved fa-xs me-1"></i>Admin
+                                                </span>
+                                            }
+                                            else if (u.Rol == "Cajero")
+                                            {
+                                                <span class="rol-badge" style="background:rgba(234,179,8,.12);color:#ca8a04;">
+                                                    <i class="fa-solid fa-cash-register fa-xs me-1"></i>Cajero
                                                 </span>
                                             }
                                             else if (u.Rol == "Cliente")
