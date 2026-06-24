@@ -557,7 +557,7 @@
             <div class="filter-title">Condición</div>
             <div class="filter-group">
                 <select id="filtroCondicion" class="cat-select">
-                    <option value="">Nuevo y Usado</option>
+                    <option value="">Todas las condiciones</option>
                 </select>
             </div>
 
@@ -619,7 +619,7 @@
 
         poblarSelect('filtroMarca',    unique(TODOS.map(v => v.marca)),    'Todas las marcas');
         poblarSelect('filtroTipo',     unique(TODOS.map(v => v.tipo)),     'Todos los tipos');
-        poblarSelect('filtroCondicion',unique(TODOS.map(v => v.condicion)),'Nuevo y Usado');
+        poblarSelect('filtroCondicion',unique(TODOS.map(v => v.condicion)),'Todas las condiciones');
 
         // Modelo dinámico por marca
         function actualizarModelos() {

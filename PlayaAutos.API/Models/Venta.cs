@@ -16,6 +16,7 @@ namespace PlayaAutos.API.Models
         public string Estado { get; set; } = "Registrada";
         public DateTime? FechaAnulacion { get; set; }
         public string? MotivoAnulacion { get; set; }
+        public decimal? PorcentajeRecargo { get; set; }
 
         public Cliente Cliente { get; set; } = null!;
         public Vehiculo Vehiculo { get; set; } = null!;

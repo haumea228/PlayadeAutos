@@ -17,6 +17,7 @@ namespace PlayaAutos.Web.Models
         public string Cliente { get; set; } = string.Empty;
         public string Vehiculo { get; set; } = string.Empty;
         public int? CantidadCuotas { get; set; }
+        public string? ComprobanteImagen { get; set; }
     }
 
     public class PagarCuotaViewModel
@@ -34,7 +35,7 @@ namespace PlayaAutos.Web.Models
         public long? MontoRecargo { get; set; }
         public int FormaPagoId { get; set; }
         public string? ObservacionPago { get; set; }
-        public IFormFile? Comprobante { get; set; }
+        public IFormFile? Comprobante { get; set; }public decimal? RecargoAutomatico { get; set; }
 
         public List<SelectListItem> FormasPago { get; set; } = new();
     }

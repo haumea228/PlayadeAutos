@@ -170,23 +170,7 @@
                                                         </button>
                                                     </form>
                                                 }
-                                                @if (t.EstadoTasacion == "Pendiente")
-                                                {
-                                                    <a href="/Tasaciones/Aprobar/@t.TasacionVehiculoId"
-                                                       class="action-btn" title="Aprobar"
-                                                       style="color:#22c55e;border-color:rgba(34,197,94,.3);">
-                                                        <i class="fa-solid fa-check"></i>
-                                                    </a>
-                                                    <form method="post" action="/Tasaciones/Rechazar/@t.TasacionVehiculoId"
-                                                          style="display:inline;" id="formRechazar_@t.TasacionVehiculoId">
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="button" class="action-btn delete"
-                                                                onclick="confirmarRechazar(@t.TasacionVehiculoId, '@(t.MarcaVehiculo + " " + t.ModeloVehiculo)')"
-                                                                title="Rechazar">
-                                                            <i class="fa-solid fa-xmark"></i>
-                                                        </button>
-                                                    </form>
-                                                }
+                                             
                                                 else
                                                 {
                                                     <span style="color:var(--pa-muted);font-size:0.75rem;">—</span>

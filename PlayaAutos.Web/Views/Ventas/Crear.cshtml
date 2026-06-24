@@ -175,6 +175,14 @@
                                            id="inputCantidadCuotas" />
                                     <span asp-validation-for="CantidadCuotas" class="val-msg"></span>
                                 </div>
+                                <div class="col-md-3">
+                                    <label class="pa-label">% Recargo por atraso</label>
+                                    <input asp-for="PorcentajeRecargo" type="number" class="pa-input"
+                                           min="0" max="100" step="0.01" placeholder="0" />
+                                    <small style="color:var(--pa-muted);font-size:0.73rem;">
+                                        Opcional. Se aplica a cuotas vencidas.
+                                    </small>
+                                </div>
                             </div>
                         </div>
 

@@ -75,9 +75,32 @@ namespace PlayaAutos.Web.Controllers
             if (!EstaAutenticado()) return RedirectToAction("Login", "Auth");
             var tas = await _api.GetAsync<JsonElement>($"api/Tasaciones/{id}");
             if (tas.ValueKind == JsonValueKind.Undefined) return NotFound();
-            if (Get(tas, "estadoTasacion") != "Pendiente") { TempData["Error"] = "Solo se pueden aprobar tasaciones Pendientes."; return RedirectToAction(nameof(Index)); }
+            if (Get(tas, "estadoTasacion") != "Pendiente")
+            {
+                TempData["Error"] = "Solo se pueden aprobar tasaciones Pendientes.";
+                return RedirectToAction(nameof(Index));
+            }
 
-            var vm = new AprobarTasacionViewModel { TasacionVehiculoId = id, /* ... resto igual ... */ };
+            var vm = new AprobarTasacionViewModel
+            {
+                TasacionVehiculoId = id,
+                ClienteNombre = Get(tas, "cliente"),
+                MarcaVehiculo = Get(tas, "marcaVehiculo"),
+                ModeloVehiculo = Get(tas, "modeloVehiculo"),
+                AnhoVehiculo = int.TryParse(Get(tas, "anhoVehiculo"), out var a) ? a : 0,
+                KilometrajeVehiculo = long.TryParse(Get(tas, "kilometrajeVehiculo"), out var km) ? km : 0,
+                EstadoGeneralVehiculo = Get(tas, "estadoGeneralVehiculo"),
+                ColorVehiculo = Get(tas, "colorVehiculo"),
+                ValorTasacionFinal = long.TryParse(Get(tas, "valorTasacion"), out var vt) ? vt : 0,
+                PrecioVentaFinal = long.TryParse(Get(tas, "precioVenta"), out var pv) ? pv : 0,
+                Color = Get(tas, "colorVehiculo"),
+                Kilometraje = long.TryParse(Get(tas, "kilometrajeVehiculo"), out var km2) ? km2 : 0,
+                ModeloId = int.TryParse(Get(tas, "modeloId"), out var moid) ? moid : 0,
+                TipoId = int.TryParse(Get(tas, "tipoId"), out var tid) ? tid : 0,
+                CondicionId = int.TryParse(Get(tas, "condicionId"), out var cid) ? cid : 0,
+                OrigenId = int.TryParse(Get(tas, "origenId"), out var oid) ? oid : 0
+            };
+
             await CargarDropdownsAprobar(vm);
             return View(vm);
         }

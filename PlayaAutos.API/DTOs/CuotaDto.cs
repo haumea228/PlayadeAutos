@@ -14,6 +14,8 @@
         public string Cliente { get; set; } = string.Empty;
         public string Vehiculo { get; set; } = string.Empty;
         public int? CantidadCuotas { get; set; }
+        public decimal? RecargoAutomatico { get; set; }
+        public string? ComprobanteImagen { get; set; }
     }
 
     public class PagarCuotaDto

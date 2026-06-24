@@ -45,7 +45,8 @@ namespace PlayaAutos.Web.Controllers
                 Vehiculo = Get(dto, "vehiculo"),
                 CantidadCuotas = int.TryParse(Get(dto, "cantidadCuotas"), out var cc) ? cc : null,
                 FechaPago = DateTime.Today,
-                MontoPagado = long.Parse(Get(dto, "monto"))
+                MontoPagado = long.Parse(Get(dto, "monto")),
+                RecargoAutomatico = decimal.TryParse(Get(dto, "recargoAutomatico"), out var ra) ? ra : null
             };
 
             await CargarFormasPago(vm);

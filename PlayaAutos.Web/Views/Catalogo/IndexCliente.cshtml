@@ -585,7 +585,7 @@
             </div>
             <div class="filter-title">Condición</div>
             <div class="filter-group">
-                <select id="filtroCondicion" class="cat-select"><option value="">Nuevo y Usado</option></select>
+                <select id="filtroCondicion" class="cat-select"><option value="">Todas las condiciones</option></select>
             </div>
             <div class="filter-title">Precio (Gs.)</div>
             <div class="filter-group">
@@ -635,7 +635,7 @@
 
         poblarSelect('filtroMarca',    unique(TODOS.map(v => v.marca)),    'Todas las marcas');
         poblarSelect('filtroTipo',     unique(TODOS.map(v => v.tipo)),     'Todos los tipos');
-        poblarSelect('filtroCondicion',unique(TODOS.map(v => v.condicion)),'Nuevo y Usado');
+        poblarSelect('filtroCondicion',unique(TODOS.map(v => v.condicion)),'Todas las condiciones');
 
         function actualizarModelos() {
         const marca = document.getElementById('filtroMarca').value;

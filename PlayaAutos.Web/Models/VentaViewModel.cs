@@ -50,6 +50,10 @@ namespace PlayaAutos.Web.Models
         [Display(Name = "Monto total (Gs.)")]
         public long MontoTotal { get; set; }
 
+        [Display(Name = "% Recargo por atraso")]
+        [Range(0, 100, ErrorMessage = "Debe estar entre 0 y 100.")]
+        public decimal? PorcentajeRecargo { get; set; }
+
         // ── Financiación (opcional) ──────────────────────────────────────
         [Display(Name = "Monto de entrada (Gs.)")]
         [Range(0, long.MaxValue)]

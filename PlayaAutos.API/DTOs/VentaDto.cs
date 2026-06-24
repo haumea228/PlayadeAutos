@@ -11,6 +11,7 @@ namespace PlayaAutos.API.DTOs
         public DateTime FechaVenta { get; set; }
         public long MontoTotal { get; set; }
         public string Estado { get; set; } = string.Empty;
+        
         public List<PagoVentaDto> Pagos { get; set; } = new();
     }
 
@@ -26,6 +27,7 @@ namespace PlayaAutos.API.DTOs
         public long? SaldoFinanciado { get; set; }
         public decimal? TasaInteres { get; set; }
         public int? CantidadCuotas { get; set; }
+        public decimal? PorcentajeRecargo { get; set; }
         public List<CrearPagoVentaDto> Pagos { get; set; } = new();
     }
 }

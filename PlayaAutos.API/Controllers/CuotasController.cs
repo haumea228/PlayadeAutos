@@ -59,7 +59,8 @@ namespace PlayaAutos.API.Controllers
                     Estado = c.Estado,
                     Cliente = c.Venta.Cliente.Nombre,
                     Vehiculo = c.Venta.Vehiculo.Modelo.Marca.Nombre + " " + c.Venta.Vehiculo.Modelo.Nombre,
-                    CantidadCuotas = c.Venta.CantidadCuotas
+                    CantidadCuotas = c.Venta.CantidadCuotas,
+                    ComprobanteImagen = c.ComprobanteImagen
                 })
                 .ToListAsync();
         }
@@ -76,6 +77,16 @@ namespace PlayaAutos.API.Controllers
 
             if (c == null) return NotFound();
 
+            //Calcular recargo automático si la cuota está vencida
+            decimal? recargoAuto = null;
+            if (c.Estado == "Pendiente" && c.FechaVencimiento < DateTime.Now)
+            {
+                if (c.Venta.PorcentajeRecargo.HasValue && c.Venta.PorcentajeRecargo > 0)
+                {
+                    recargoAuto = (long)(c.Monto * (c.Venta.PorcentajeRecargo.Value / 100m));
+                }
+            }
+
             return new CuotaDto
             {
                 CuotaId = c.CuotaId,
@@ -89,7 +100,9 @@ namespace PlayaAutos.API.Controllers
                 Estado = c.Estado,
                 Cliente = c.Venta.Cliente.Nombre,
                 Vehiculo = c.Venta.Vehiculo.Modelo.Marca.Nombre + " " + c.Venta.Vehiculo.Modelo.Nombre,
-                CantidadCuotas = c.Venta.CantidadCuotas
+                CantidadCuotas = c.Venta.CantidadCuotas,
+                RecargoAutomatico = recargoAuto,
+                ComprobanteImagen = c.ComprobanteImagen
             };
         }
 
@@ -109,7 +122,8 @@ namespace PlayaAutos.API.Controllers
                     FechaPago = c.FechaPago,
                     MontoPagado = c.MontoPagado,
                     MontoRecargo = c.MontoRecargo,
-                    Estado = c.Estado
+                    Estado = c.Estado,
+                    RecargoAutomatico = null
                 })
                 .ToListAsync();
         }
@@ -139,8 +153,6 @@ namespace PlayaAutos.API.Controllers
                 cuota.Estado = "Pagada";
                 cuota.FechaRegistroPago = DateTime.Now;
 
-                // ── 🟢 Registrar movimiento de caja (INGRESO) ─────────────────
-                // ✅ CORRECTO: Buscar por Signo = "+"
                 var tipoIngreso = await _context.TiposMovimiento
                     .FirstOrDefaultAsync(t => t.Signo == "+");
 
@@ -192,7 +204,6 @@ namespace PlayaAutos.API.Controllers
             var venta = cuota.Venta;
             var saldoInicial = venta.SaldoFinanciado ?? venta.MontoTotal;
 
-            // Suma de pagos de cuotas ANTERIORES a esta (por número de cuota)
             var pagosAnteriores = venta.Cuotas
                 .Where(c => c.Estado == "Pagada" && c.NumeroCuota < cuota.NumeroCuota)
                 .Sum(c => (c.MontoPagado ?? 0) + (c.MontoRecargo ?? 0));
