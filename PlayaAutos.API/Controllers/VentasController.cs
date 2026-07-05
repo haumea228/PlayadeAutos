@@ -102,9 +102,11 @@ namespace PlayaAutos.API.Controllers
 
             try
             {
+                // ── Obtener IDs necesarios ──────────────────────────────────────
                 var tipoCredito = await _context.TiposVenta
                     .FirstOrDefaultAsync(t => t.RequiereFinanciacion);
 
+                // ── Validar suma de pagos ────────────────────────────────────
                 if (dto.Pagos.Count == 0)
                     return BadRequest("Debe especificar al menos un pago.");
 
@@ -113,12 +115,14 @@ namespace PlayaAutos.API.Controllers
                 if (sumaPagos != montoEsperado)
                     return BadRequest($"La suma de los pagos ({sumaPagos}) no coincide con el monto de entrada ({montoEsperado}).");
 
+                // validacion para que pagos no supere monto entrada
                 foreach (var pago in dto.Pagos)
                 {
                     if (pago.Monto > montoEsperado)
                         return BadRequest($"El pago de Gs. {pago.Monto:N0} supera el monto de entrada ({montoEsperado:N0}).");
                 }
 
+                // validacion para que permuta no supere monto total
                 var montoPermuta = dto.Pagos
                     .Where(p => p.TasacionVehiculoId.HasValue)
                     .Sum(p => p.Monto);
@@ -126,6 +130,7 @@ namespace PlayaAutos.API.Controllers
                 if (montoPermuta > dto.MontoTotal)
                     return BadRequest($"La permuta (Gs. {montoPermuta:N0}) no puede superar el monto total de la venta (Gs. {dto.MontoTotal:N0}).");
 
+                // Validar vehículo si existe y esta disponible y permite venta
                 var vehiculo = await _context.Vehiculos
                     .Include(v => v.Estado)
                     .FirstOrDefaultAsync(v => v.VehiculoId == dto.VehiculoId);
@@ -136,9 +141,11 @@ namespace PlayaAutos.API.Controllers
                 if (!vehiculo.Estado.PermiteVenta)
                     return BadRequest($"El vehículo no está disponible para la venta. Estado actual: {vehiculo.Estado.Descripcion}");
 
+                // validar que exista el cliente
                 if (!await _context.Clientes.AnyAsync(c => c.ClienteId == dto.ClienteId))
                     return BadRequest("El cliente no existe.");
 
+                // valida que las tasaciones referenciadas si existan
                 var tasacionIds = dto.Pagos
                     .Where(p => p.TasacionVehiculoId.HasValue)
                     .Select(p => p.TasacionVehiculoId!.Value)
@@ -153,6 +160,7 @@ namespace PlayaAutos.API.Controllers
                         return BadRequest($"La tasación {tasId} debe estar en estado Aprobada para usarse como permuta.");
                 }
 
+                // ── Crear venta ──────────────────────────────────────────────
                 var venta = new Venta
                 {
                     ClienteId = dto.ClienteId,
@@ -165,13 +173,14 @@ namespace PlayaAutos.API.Controllers
                     SaldoFinanciado = dto.SaldoFinanciado,
                     TasaInteres = dto.TasaInteres,
                     CantidadCuotas = dto.CantidadCuotas,
-                    Estado = "Pendiente",
-                    PorcentajeRecargo = dto.PorcentajeRecargo
+                    Estado = "Pendiente",  // Pendiente hasta que Cajero finalice
+                    PorcentajeRecargo = dto.PorcentajeRecargo // nuevo para recargo automatico
                 };
 
                 _context.Ventas.Add(venta);
                 await _context.SaveChangesAsync();
 
+                // ── Crear pagos ──────────────────────────────────────────────
                 foreach (var pagoDto in dto.Pagos)
                 {
                     _context.PagosVenta.Add(new PagoVenta
@@ -185,6 +194,7 @@ namespace PlayaAutos.API.Controllers
                     });
                 }
 
+                // ── 🟢 Cambiar estado del vehículo a Vendido AHORA ──────────
                 var estadoVendido = await _context.EstadosVehiculo
                     .FirstOrDefaultAsync(e => e.Descripcion == "Vendido");
 
@@ -225,6 +235,7 @@ namespace PlayaAutos.API.Controllers
                 var tipoCredito = await _context.TiposVenta
                     .FirstOrDefaultAsync(t => t.RequiereFinanciacion);
 
+                // ── Validar timbrado activo ──────────────────────────────────
                 var timbrado = await _context.Timbrados
                     .FirstOrDefaultAsync(t =>
                         t.Activo &&
@@ -235,6 +246,7 @@ namespace PlayaAutos.API.Controllers
                 if (timbrado == null)
                     return BadRequest("No hay timbrado activo disponible.");
 
+                // ── Generar factura ─────────────────────────────────────────
                 timbrado.UltimoNumeroUsado++;
                 var numeroFactura = $"{timbrado.NumeroTimbrado}-{timbrado.UltimoNumeroUsado:D8}";
 
@@ -254,6 +266,7 @@ namespace PlayaAutos.API.Controllers
                     UsuarioGeneracion = venta.VendedorId
                 });
 
+                // ── Generar nota de crédito por cada permuta ─────────────────
                 foreach (var pago in venta.PagosVenta.Where(p => p.TasacionVehiculoId.HasValue))
                 {
                     var tasPerm = await _context.TasacionesVehiculo.FindAsync(pago.TasacionVehiculoId!.Value);
@@ -277,6 +290,7 @@ namespace PlayaAutos.API.Controllers
                     });
                 }
 
+                // ── Generar cuotas si es crédito ─────────────────────────────
                 if (venta.CantidadCuotas.HasValue && venta.CantidadCuotas > 0 && venta.SaldoFinanciado.HasValue)
                 {
                     var montoCuota = venta.SaldoFinanciado.Value / venta.CantidadCuotas.Value;
@@ -293,6 +307,7 @@ namespace PlayaAutos.API.Controllers
                     }
                 }
 
+                // ── Registrar movimiento de caja (INGRESO) ─────────────────
                 var tipoIngreso = await _context.TiposMovimiento
                     .FirstOrDefaultAsync(t => t.Signo == "+");
 
@@ -344,6 +359,7 @@ namespace PlayaAutos.API.Controllers
                     }
                 }
 
+                // ── Procesar vehículos de permuta (reactivar o crear) ────────
                 var estadoDisponible = await _context.EstadosVehiculo
                     .FirstOrDefaultAsync(e => e.Descripcion == "Disponible");
 
@@ -367,11 +383,6 @@ namespace PlayaAutos.API.Controllers
                             vehiculoExistente.Kilometraje = (long)tas.KilometrajeVehiculo;
                             vehiculoExistente.PrecioVenta = tas.PrecioVenta;
                             vehiculoExistente.Color = tas.ColorVehiculo;
-                            vehiculoExistente.Anio = tas.AnhoVehiculo;
-                            if (tas.ModeloId.HasValue) vehiculoExistente.ModeloId = tas.ModeloId.Value;
-                            if (tas.TipoId.HasValue) vehiculoExistente.TipoId = tas.TipoId.Value;
-                            if (tas.CondicionId.HasValue) vehiculoExistente.CondicionId = tas.CondicionId.Value;
-                            if (tas.OrigenId.HasValue) vehiculoExistente.OrigenId = tas.OrigenId.Value;
                         }
                     }
                     else if (tas.ModeloId.HasValue && tas.TipoId.HasValue &&
@@ -400,7 +411,14 @@ namespace PlayaAutos.API.Controllers
                     }
                 }
 
-                // Liquidar consigna si aplica
+                // ── Cambiar estado del vehículo a Vendido ────────────────────
+                var estadoVendido = await _context.EstadosVehiculo
+                    .FirstOrDefaultAsync(e => e.Descripcion == "Vendido");
+
+                if (estadoVendido != null)
+                    venta.Vehiculo.EstadoId = estadoVendido.EstadoId;
+
+                // ── Liquidar consigna si aplica ──────────────────────────────
                 var vehiculo = venta.Vehiculo;
                 if (vehiculo.ConsignanteId.HasValue)
                 {
@@ -438,6 +456,7 @@ namespace PlayaAutos.API.Controllers
                     }
                 }
 
+                // ── Marcar venta como finalizada ─────────────────────────────
                 venta.Estado = "Registrada";
 
                 await _context.SaveChangesAsync();
@@ -469,30 +488,41 @@ namespace PlayaAutos.API.Controllers
                 if (venta == null) return NotFound();
                 if (venta.Estado == "Anulada") return BadRequest("La venta ya está anulada.");
 
+                // ── Calcular cuánto dinero entró realmente en caja ──────────────
                 var tipoCredito = await _context.TiposVenta
                     .FirstOrDefaultAsync(t => t.RequiereFinanciacion);
 
                 bool esCredito = tipoCredito != null && venta.TipoVentaId == tipoCredito.TipoVentaId;
 
+                // Monto que ingresó en caja al momento de la venta
                 long montoIngresado;
                 if (esCredito)
+                {
                     montoIngresado = venta.MontoEntrada ?? 0;
+                }
                 else
+                {
                     montoIngresado = venta.MontoTotal;
+                }
 
+                // Restar el valor de las permutas (nunca entró ese dinero)
                 var montoPermuta = venta.PagosVenta
                     .Where(p => p.TasacionVehiculoId != null)
                     .Sum(p => p.Monto);
 
                 montoIngresado -= montoPermuta;
 
+                // ──  Crear EGRESO por anulación (cambia signo) ────
+                // busca por signo -
                 if (montoIngresado > 0)
                 {
                     var tipoEgreso = await _context.TiposMovimiento
                         .FirstOrDefaultAsync(t => t.Signo == "-");
 
                     if (tipoEgreso == null)
+                    {
                         return BadRequest("No se encontró el tipo de movimiento 'Egreso' en la base de datos.");
+                    }
 
                     _context.MovimientosCaja.Add(new MovimientoCaja
                     {
@@ -506,21 +536,26 @@ namespace PlayaAutos.API.Controllers
                     });
                 }
 
+                // ── Marcar venta como anulada ───────────────────────────────────
                 venta.Estado = "Anulada";
                 venta.FechaAnulacion = DateTime.Now;
                 venta.MotivoAnulacion = motivo;
 
+                // ── Revertir estado del vehículo ────────────────────────────────
                 var estadoDisponible = await _context.EstadosVehiculo
                     .FirstOrDefaultAsync(e => e.Descripcion == "Disponible");
                 if (estadoDisponible != null)
                     venta.Vehiculo.EstadoId = estadoDisponible.EstadoId;
 
+                // ── Anular cuotas pendientes ────────────────────────────────────
                 var cuotasPendientes = await _context.Cuotas
                     .Where(c => c.VentaId == id && c.Estado == "Pendiente")
                     .ToListAsync();
 
                 foreach (var cuota in cuotasPendientes)
+                {
                     cuota.Estado = "Anulada";
+                }
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();

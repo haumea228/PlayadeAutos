@@ -24,7 +24,6 @@ namespace PlayaAutos.Web.Models
 
     public class VentaViewModel
     {
-        // ── Dropdowns ────────────────────────────────────────────────────
         [Required(ErrorMessage = "Seleccione un cliente.")]
         [Display(Name = "Cliente")]
         public int ClienteId { get; set; }
@@ -39,7 +38,6 @@ namespace PlayaAutos.Web.Models
 
         public int VendedorId { get; set; }
 
-        // ── Datos de la venta ────────────────────────────────────────────
         [Required(ErrorMessage = "La fecha de venta es obligatoria.")]
         [Display(Name = "Fecha de venta")]
         [DataType(DataType.Date)]
@@ -54,7 +52,6 @@ namespace PlayaAutos.Web.Models
         [Range(0, 100, ErrorMessage = "Debe estar entre 0 y 100.")]
         public decimal? PorcentajeRecargo { get; set; }
 
-        // ── Financiación (opcional) ──────────────────────────────────────
         [Display(Name = "Monto de entrada (Gs.)")]
         [Range(0, long.MaxValue)]
         public long? MontoEntrada { get; set; }
@@ -71,16 +68,17 @@ namespace PlayaAutos.Web.Models
         [Range(1, 120)]
         public int? CantidadCuotas { get; set; }
 
-        // ── Pagos ────────────────────────────────────────────────────────
         [ValidateNever]
         public List<PagoVentaViewModel> Pagos { get; set; } = new();
 
-        // ── Listas para dropdowns ────────────────────────────────────────
         [ValidateNever] public List<SelectListItem> Clientes { get; set; } = new();
         [ValidateNever] public List<SelectListItem> Vehiculos { get; set; } = new();
         [ValidateNever] public List<SelectListItem> TiposVenta { get; set; } = new();
         [ValidateNever] public List<SelectListItem> FormasPago { get; set; } = new();
         [ValidateNever] public List<TasacionSelectItem> TasacionesAprobadas { get; set; } = new();
+
+        // 🟢 NUEVO
+        [ValidateNever] public List<TipoVentaListItem> TiposVentaData { get; set; } = new();
     }
 
     public class VentaListItem
@@ -94,5 +92,13 @@ namespace PlayaAutos.Web.Models
         public DateTime FechaVenta { get; set; }
         public long MontoTotal { get; set; }
         public string Estado { get; set; } = string.Empty;
+    }
+
+    // 🟢 NUEVO
+    public class TipoVentaListItem
+    {
+        public int TipoVentaId { get; set; }
+        public string Descripcion { get; set; } = string.Empty;
+        public bool RequiereFinanciacion { get; set; }
     }
 }

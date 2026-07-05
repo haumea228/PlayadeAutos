@@ -50,11 +50,17 @@
 
                 <script id="tasacionesData" type="application/json">
                                     @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TasacionesAprobadas,
-                                                    new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }))
+                                                                    new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }))
                 </script>
                 <script id="formasPagoData" type="application/json">
                                     @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                                                    Model.FormasPago.Select(f => new { value = f.Value, text = f.Text })
+                                                                    Model.FormasPago.Select(f => new { value = f.Value, text = f.Text })
+                                    ))
+                </script>
+                <script id="tiposVentaData" type="application/json">
+                                    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                                            Model.TiposVentaData,
+                                            new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }
                                     ))
                 </script>
 
@@ -105,12 +111,6 @@
                                     <label asp-for="TipoVentaId" class="pa-label">Tipo de venta *</label>
                                     <select asp-for="TipoVentaId" class="pa-input" id="selectTipoVenta">
                                         <option value="">— Seleccione —</option>
-                                        @foreach (var t in Model.TiposVenta)
-                                        {
-                                            <option value="@t.Value" data-financiacion="@t.Group?.Name">
-                                                @t.Text
-                                            </option>
-                                        }
                                     </select>
                                     <span asp-validation-for="TipoVentaId" class="val-msg"></span>
                                 </div>
@@ -485,12 +485,26 @@
         // ── Datos embebidos ───────────────────────────────────────────────────
         const allTasaciones = JSON.parse(document.getElementById('tasacionesData').textContent);
         const allFormasPago = JSON.parse(document.getElementById('formasPagoData').textContent);
+        const tiposVentaList = JSON.parse(document.getElementById('tiposVentaData').textContent);
 
         // ── Estado de pagos ───────────────────────────────────────────────────
         let pagos = [];
         let pagoCounter = 0;
 
         const fmt = n => 'Gs. ' + Math.round(Number(n) || 0).toLocaleString('es-PY');
+
+        // ── Cargar tipos de venta ──────────────────────────────────────────────
+        function cargarTiposVenta() {
+            const select = document.getElementById('selectTipoVenta');
+            select.innerHTML = '<option value="">— Seleccione —</option>';
+            tiposVentaList.forEach(tipo => {
+                const opt = document.createElement('option');
+                opt.value = tipo.tipoVentaId;
+                opt.textContent = tipo.descripcion;
+                opt.dataset.financiacion = tipo.requiereFinanciacion ? 'credito' : 'contado';
+                select.appendChild(opt);
+            });
+        }
 
         function getMontoEntrada() {
             const entrada = parseInt(document.getElementById('inputMontoEntrada').value) || 0;
@@ -504,7 +518,7 @@
                 .reduce((sum, p) => sum + (p.tasValor || 0), 0);
         }
 
-        // ── Filtrar tasaciones por cliente 
+        // ── Filtrar tasaciones por cliente
         function actualizarTasacionesPorCliente() {
             const clienteId = parseInt(document.getElementById('selectCliente').value) || 0;
             const sel = document.getElementById('addTasacion');
@@ -864,67 +878,6 @@
             actualizarResumen();
         }
 
-                // forzar al contado para autos consignados por el cs del codigo interno
-        function evaluarVehiculoConsignado() {
-            const selectVehiculo = document.getElementById('selectVehiculo');
-            const textoVehiculo = selectVehiculo.options[selectVehiculo.selectedIndex]?.text || '';
-
-            // para detectar cs del codigo generado automaticamente
-            const esConsignado = textoVehiculo.includes('CS-') ||
-                                 textoVehiculo.toLowerCase().includes('consigna');
-
-            const selectTipoVenta = document.getElementById('selectTipoVenta');
-
-            if (esConsignado) {
-                // Buscar contado
-                for (let i = 0; i < selectTipoVenta.options.length; i++) {
-                    const opt = selectTipoVenta.options[i];
-                    if (opt.dataset.financiacion === 'contado' || opt.text.toLowerCase().includes('contado')) {
-                        selectTipoVenta.value = opt.value;
-                        break;
-                    }
-                }
-                // Deshabilitar cambio de tipo de venta
-                selectTipoVenta.disabled = true;
-                selectTipoVenta.style.opacity = '0.6';
-                selectTipoVenta.title = 'Vehículos consignados solo se venden al contado';
-
-                // Ocultar financiación
-                document.getElementById('seccionFinanciacion').style.display = 'none';
-                document.getElementById('resumenCuotas').style.display = 'none';
-
-                // Limpiar campos de financiación
-                document.getElementById('inputSaldoFinanciado').value = '';
-                document.getElementById('inputTasaInteres').value = '';
-                document.getElementById('inputCantidadCuotas').value = '';
-
-                mostrarAvisoConsignado(true);
-            } else {
-                // Restaurar
-                selectTipoVenta.disabled = false;
-                selectTipoVenta.style.opacity = '1';
-                selectTipoVenta.title = '';
-                mostrarAvisoConsignado(false);
-                evaluarTipoVenta();
-            }
-        }
-
-        function mostrarAvisoConsignado(mostrar) {
-            let aviso = document.getElementById('avisoConsignado');
-            if (mostrar) {
-                if (!aviso) {
-                    aviso = document.createElement('div');
-                    aviso.id = 'avisoConsignado';
-                    aviso.style.cssText = 'margin-top:0.5rem;padding:0.5rem 0.75rem;background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.3);border-radius:7px;font-size:0.8rem;color:#ca8a04;';
-                    aviso.innerHTML = '<i class="fa-solid fa-circle-info me-1"></i> Los vehículos consignados solo se venden al contado. El pago total se liquida al dueño.';
-                    document.getElementById('selectTipoVenta').parentNode.appendChild(aviso);
-                }
-                aviso.style.display = '';
-            } else if (aviso) {
-                aviso.style.display = 'none';
-            }
-        }
-
         // ── Precio del vehículo → pre-llenar MontoTotal ───────────────────────
         document.getElementById('selectVehiculo').addEventListener('change', function () {
             const texto = this.options[this.selectedIndex]?.text ?? '';
@@ -934,7 +887,6 @@
                 document.getElementById('inputMontoTotal').value = isNaN(precio) ? '' : precio;
                 actualizarResumen();
                 actualizarIndicador();
-                evaluarVehiculoConsignado();
             }
         });
 
@@ -944,7 +896,8 @@
         document.getElementById('inputTasaInteres').addEventListener('input', actualizarResumen);
         document.getElementById('inputCantidadCuotas').addEventListener('input', actualizarResumen);
 
-        // Inicializar
+        // ── Inicializar ─────────────────────────────────────────────────────────
+        cargarTiposVenta();
         evaluarTipoVenta();
         actualizarResumen();
         actualizarIndicador();

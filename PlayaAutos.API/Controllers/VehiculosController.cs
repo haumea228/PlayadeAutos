@@ -32,25 +32,25 @@ namespace PlayaAutos.API.Controllers
                 .Include(v => v.Fotos)
                 .Select(v => new VehiculoDto
                 {
-                    VehiculoId       = v.VehiculoId,
-                    CodigoInterno    = v.CodigoInterno,
-                    MarcaId          = v.Modelo.MarcaId,
-                    ModeloId         = v.ModeloId,
-                    TipoId           = v.TipoId,
-                    CondicionId      = v.CondicionId,
-                    EstadoId         = v.EstadoId,
-                    OrigenId         = v.OrigenId,
-                    Marca            = v.Modelo.Marca.Nombre,
-                    Modelo           = v.Modelo.Nombre,
-                    Tipo             = v.Tipo.Descripcion,
-                    Condicion        = v.Condicion.Descripcion,
-                    Estado           = v.Estado.Descripcion,
-                    Anio             = v.Anio,
-                    Color            = v.Color,
-                    Kilometraje      = v.Kilometraje,
-                    PrecioVenta      = v.PrecioVenta,
+                    VehiculoId = v.VehiculoId,
+                    CodigoInterno = v.CodigoInterno,
+                    MarcaId = v.Modelo.MarcaId,
+                    ModeloId = v.ModeloId,
+                    TipoId = v.TipoId,
+                    CondicionId = v.CondicionId,
+                    EstadoId = v.EstadoId,
+                    OrigenId = v.OrigenId,
+                    Marca = v.Modelo.Marca.Nombre,
+                    Modelo = v.Modelo.Nombre,
+                    Tipo = v.Tipo.Descripcion,
+                    Condicion = v.Condicion.Descripcion,
+                    Estado = v.Estado.Descripcion,
+                    Anio = v.Anio,
+                    Color = v.Color,
+                    Kilometraje = v.Kilometraje,
+                    PrecioVenta = v.PrecioVenta,
                     CostoAdquisicion = v.CostoAdquisicion,
-                    Descripcion      = v.Descripcion,
+                    Descripcion = v.Descripcion,
                     FotoPrincipal = v.Fotos
                         .Where(f => f.EsPrincipal)
                         .Select(f => f.URL)
@@ -59,11 +59,11 @@ namespace PlayaAutos.API.Controllers
                         .OrderBy(f => f.Orden)
                         .Select(f => new FotoVehiculoDto
                         {
-                            FotoId        = f.FotoId,
-                            URL           = f.URL,
+                            FotoId = f.FotoId,
+                            URL = f.URL,
                             NombreArchivo = f.NombreArchivo,
-                            EsPrincipal   = f.EsPrincipal,
-                            Orden         = f.Orden
+                            EsPrincipal = f.EsPrincipal,
+                            Orden = f.Orden
                         }).ToList()
                 })
                 .ToListAsync();
@@ -83,18 +83,18 @@ namespace PlayaAutos.API.Controllers
                 .Where(v => v.Estado.VisibleEnCatalogo)
                 .Select(v => new VehiculoDto
                 {
-                    VehiculoId    = v.VehiculoId,
+                    VehiculoId = v.VehiculoId,
                     CodigoInterno = v.CodigoInterno,
-                    Marca         = v.Modelo.Marca.Nombre,
-                    Modelo        = v.Modelo.Nombre,
-                    Tipo          = v.Tipo.Descripcion,
-                    Condicion     = v.Condicion.Descripcion,
-                    Estado        = v.Estado.Descripcion,
-                    Anio          = v.Anio,
-                    Color         = v.Color,
-                    Kilometraje   = v.Kilometraje,
-                    PrecioVenta   = v.PrecioVenta,
-                    Descripcion   = v.Descripcion,
+                    Marca = v.Modelo.Marca.Nombre,
+                    Modelo = v.Modelo.Nombre,
+                    Tipo = v.Tipo.Descripcion,
+                    Condicion = v.Condicion.Descripcion,
+                    Estado = v.Estado.Descripcion,
+                    Anio = v.Anio,
+                    Color = v.Color,
+                    Kilometraje = v.Kilometraje,
+                    PrecioVenta = v.PrecioVenta,
+                    Descripcion = v.Descripcion,
                     FotoPrincipal = v.Fotos
                         .Where(f => f.EsPrincipal)
                         .Select(f => f.URL)
@@ -120,25 +120,25 @@ namespace PlayaAutos.API.Controllers
 
             return new VehiculoDto
             {
-                VehiculoId    = v.VehiculoId,
-                Marca         = v.Modelo.Marca.Nombre,
-                Modelo        = v.Modelo.Nombre,
-                Tipo          = v.Tipo.Descripcion,
-                Condicion     = v.Condicion.Descripcion,
-                Estado        = v.Estado.Descripcion,
-                Anio          = v.Anio,
-                Color         = v.Color,
-                Kilometraje   = v.Kilometraje,
-                PrecioVenta   = v.PrecioVenta,
-                Descripcion   = v.Descripcion,
+                VehiculoId = v.VehiculoId,
+                Marca = v.Modelo.Marca.Nombre,
+                Modelo = v.Modelo.Nombre,
+                Tipo = v.Tipo.Descripcion,
+                Condicion = v.Condicion.Descripcion,
+                Estado = v.Estado.Descripcion,
+                Anio = v.Anio,
+                Color = v.Color,
+                Kilometraje = v.Kilometraje,
+                PrecioVenta = v.PrecioVenta,
+                Descripcion = v.Descripcion,
                 FotoPrincipal = v.Fotos.Where(f => f.EsPrincipal).Select(f => f.URL).FirstOrDefault(),
                 Fotos = v.Fotos.OrderBy(f => f.Orden).Select(f => new FotoVehiculoDto
                 {
-                    FotoId        = f.FotoId,
-                    URL           = f.URL,
+                    FotoId = f.FotoId,
+                    URL = f.URL,
                     NombreArchivo = f.NombreArchivo,
-                    EsPrincipal   = f.EsPrincipal,
-                    Orden         = f.Orden
+                    EsPrincipal = f.EsPrincipal,
+                    Orden = f.Orden
                 }).ToList()
             };
         }
@@ -159,33 +159,33 @@ namespace PlayaAutos.API.Controllers
 
             return new VehiculoDto
             {
-                VehiculoId       = v.VehiculoId,
-                CodigoInterno    = v.CodigoInterno,
-                MarcaId          = v.Modelo.MarcaId,
-                ModeloId         = v.ModeloId,
-                TipoId           = v.TipoId,
-                CondicionId      = v.CondicionId,
-                EstadoId         = v.EstadoId,
-                OrigenId         = v.OrigenId,
-                Marca            = v.Modelo.Marca.Nombre,
-                Modelo           = v.Modelo.Nombre,
-                Tipo             = v.Tipo.Descripcion,
-                Condicion        = v.Condicion.Descripcion,
-                Estado           = v.Estado.Descripcion,
-                Anio             = v.Anio,
-                Color            = v.Color,
-                Kilometraje      = v.Kilometraje,
-                PrecioVenta      = v.PrecioVenta,
+                VehiculoId = v.VehiculoId,
+                CodigoInterno = v.CodigoInterno,
+                MarcaId = v.Modelo.MarcaId,
+                ModeloId = v.ModeloId,
+                TipoId = v.TipoId,
+                CondicionId = v.CondicionId,
+                EstadoId = v.EstadoId,
+                OrigenId = v.OrigenId,
+                Marca = v.Modelo.Marca.Nombre,
+                Modelo = v.Modelo.Nombre,
+                Tipo = v.Tipo.Descripcion,
+                Condicion = v.Condicion.Descripcion,
+                Estado = v.Estado.Descripcion,
+                Anio = v.Anio,
+                Color = v.Color,
+                Kilometraje = v.Kilometraje,
+                PrecioVenta = v.PrecioVenta,
                 CostoAdquisicion = v.CostoAdquisicion,
-                Descripcion      = v.Descripcion,
-                FotoPrincipal    = v.Fotos.Where(f => f.EsPrincipal).Select(f => f.URL).FirstOrDefault(),
+                Descripcion = v.Descripcion,
+                FotoPrincipal = v.Fotos.Where(f => f.EsPrincipal).Select(f => f.URL).FirstOrDefault(),
                 Fotos = v.Fotos.OrderBy(f => f.Orden).Select(f => new FotoVehiculoDto
                 {
-                    FotoId        = f.FotoId,
-                    URL           = f.URL,
+                    FotoId = f.FotoId,
+                    URL = f.URL,
                     NombreArchivo = f.NombreArchivo,
-                    EsPrincipal   = f.EsPrincipal,
-                    Orden         = f.Orden
+                    EsPrincipal = f.EsPrincipal,
+                    Orden = f.Orden
                 }).ToList()
             };
         }
@@ -228,18 +228,18 @@ namespace PlayaAutos.API.Controllers
             var vehiculo = await _context.Vehiculos.FindAsync(id);
             if (vehiculo == null) return NotFound();
 
-            vehiculo.CodigoInterno    = dto.CodigoInterno;
-            vehiculo.ModeloId         = dto.ModeloId;
-            vehiculo.TipoId           = dto.TipoId;
-            vehiculo.CondicionId      = dto.CondicionId;
-            vehiculo.EstadoId         = dto.EstadoId;
-            vehiculo.OrigenId         = dto.OrigenId;
-            vehiculo.Anio             = dto.Anio;
-            vehiculo.Color            = dto.Color;
-            vehiculo.Kilometraje      = dto.Kilometraje;
-            vehiculo.PrecioVenta      = dto.PrecioVenta;
+            vehiculo.CodigoInterno = dto.CodigoInterno;
+            vehiculo.ModeloId = dto.ModeloId;
+            vehiculo.TipoId = dto.TipoId;
+            vehiculo.CondicionId = dto.CondicionId;
+            vehiculo.EstadoId = dto.EstadoId;
+            vehiculo.OrigenId = dto.OrigenId;
+            vehiculo.Anio = dto.Anio;
+            vehiculo.Color = dto.Color;
+            vehiculo.Kilometraje = dto.Kilometraje;
+            vehiculo.PrecioVenta = dto.PrecioVenta;
             vehiculo.CostoAdquisicion = dto.CostoAdquisicion;
-            vehiculo.Descripcion      = dto.Descripcion;
+            vehiculo.Descripcion = dto.Descripcion;
 
             await _context.SaveChangesAsync();
             return NoContent();
@@ -279,12 +279,12 @@ namespace PlayaAutos.API.Controllers
 
             _context.FotosVehiculo.Add(new FotoVehiculo
             {
-                VehiculoId    = id,
-                URL           = dto.URL,
+                VehiculoId = id,
+                URL = dto.URL,
                 NombreArchivo = dto.NombreArchivo,
-                EsPrincipal   = dto.EsPrincipal,
-                Orden         = dto.Orden,
-                FechaAlta     = DateTime.Now
+                EsPrincipal = dto.EsPrincipal,
+                Orden = dto.Orden,
+                FechaAlta = DateTime.Now
             });
 
             await _context.SaveChangesAsync();
